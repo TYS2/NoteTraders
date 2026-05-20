@@ -17,7 +17,7 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	_, err := client.Database("account").Collection("users").InsertOne(context.TODO(), user)
+	_, err := client.Database("NoteTraders").Collection("users").InsertOne(context.TODO(), user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
@@ -35,7 +35,7 @@ func Login(c *gin.Context) {
 	}
 
 	var result bson.M
-	err := client.Database("account").Collection("users").FindOne(context.TODO(), bson.M{"username": user["username"], "password": user["password"]}).Decode(&result)
+	err := client.Database("NoteTraders").Collection("users").FindOne(context.TODO(), bson.M{"username": user["username"], "password": user["password"]}).Decode(&result)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
@@ -45,7 +45,7 @@ func Login(c *gin.Context) {
 
 func GetAllUsers(c *gin.Context) {
 	client := initializers.GetDB()
-	cursor, err := client.Database("account").Collection("users").Find(context.TODO(), bson.M{})
+	cursor, err := client.Database("NoteTraders").Collection("users").Find(context.TODO(), bson.M{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 		return
@@ -57,4 +57,37 @@ func GetAllUsers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
+func CreateListing(c *gin.Context) {
+	client := initializers.GetDB()
+	var listing bson.M
+	if err := c.ShouldBindJSON(&listing); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid listing data"})
+		return
+	}
+
+	_, err := client.Database("NoteTraders").Collection("Listings").InsertOne(context.TODO(), listing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create listing"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Listing created successfully"})
+}
+
+func GetAllListings(c *gin.Context){
+	client := initializers.GetDB()
+	cursor, err := client.Database("NoteTraders").Collection("Listings").Find(context.TODO(), bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch listings"})
+		return
+	}
+
+	var listings []bson.M
+	if err = cursor.All(context.TODO(), &listings); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode listings"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"listings": listings})
 }
