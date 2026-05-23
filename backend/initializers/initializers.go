@@ -3,7 +3,9 @@ package initializers
 import (
 	"context"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -11,7 +13,11 @@ import (
 var DB *mongo.Client
 
 func ConnectDB() {
-	uri := "mongodb://localhost:27017/?directConnection=true"
+	er := godotenv.Load()
+	if er != nil {
+		log.Fatal("Error loading .env file:", er)
+	}
+	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
 		log.Fatal("Set your 'MONGODB_URI' environment variable.")
 	}
