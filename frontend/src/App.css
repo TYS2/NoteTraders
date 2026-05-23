@@ -1,0 +1,266 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #d8c8b8;
+}
+
+.app {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #d8c8b8;
+}
+
+/* Top logo area */
+.top-header {
+  height: 47px;
+  background-color: #d8c8b8;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 65px;
+  height: auto;
+}
+
+.logo-section h1 {
+  font-family: Georgia, serif;
+  font-size: 34px;
+  color: #8a6257;
+  font-weight: bold;
+}
+
+/* Navigation bar */
+.navbar {
+  width: 100%;
+  height: 60px;
+  background-color: #e4b65b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+}
+
+.nav-left,
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.nav-left a {
+  text-decoration: none;
+  color: black;
+  font-size: 15px;
+}
+
+.nav-left a:hover {
+  text-decoration: underline;
+}
+
+select {
+  border: none;
+  background-color: transparent;
+  font-size: 15px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Search */
+.search-box {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 20px;
+  padding: 2px 8px 2px 12px;
+  width: 160px;
+  height: 34px;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 15px;
+  width: 100px;
+}
+
+.search-box button {
+  border: none;
+  background: none;
+  font-size: 25px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* Main homepage */
+.homepage {
+  text-align: center;
+  padding-top: 16px;
+}
+
+.homepage h2 {
+  font-family: Georgia, serif;
+  color: #8a6257;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.nav-left button {
+  border: none;
+  background: none;
+  color: black;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.nav-left button:hover {
+  text-decoration: underline;
+}
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 25px;
+  background-color: #d8c8b8;
+}
+
+.login-card {
+  width: 580px;
+  text-align: center;
+  color: #8a6257;
+  font-family: Georgia, serif;
+}
+
+.signup-heading,
+.login-heading {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.login-heading {
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 95px 110px 250px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 17px;
+}
+
+.form-row label {
+  grid-column: 2;
+  text-align: left;
+  font-size: 20px;
+  font-weight: bold;
+  margin-right: 0;
+  width: auto;
+}
+
+.form-row input {
+  grid-column: 3;
+  width: 250px;
+  height: 32px;
+  border: none;
+  background-color: white;
+  padding: 5px 8px;
+  font-size: 15px;
+}
+
+.optional-text {
+  grid-column: 1;
+  text-align: right;
+  font-size: 17px;
+  color: #8a6257;
+}
+
+.main-btn,
+.secondary-btn {
+  width: 210px;
+  height: 33px;
+  border: none;
+  border-radius: 18px;
+  background-color: #7fb395;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.main-btn:hover,
+.secondary-btn:hover {
+  background-color: #6aa383;
+}
+
+.signup-text,
+.login-subtitle,
+.back-btn {
+  display: none;
+}
+
+.back-btn {
+  display: block;
+  margin: 18px auto 0;
+  border: none;
+  background: none;
+  color: #8a6257;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.listing-section {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+.listing-card {
+  width: 220px;
+  min-height: 140px;
+  background-color: #f3eadf;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  color: #5f443d;
+}
+
+.listing-card:hover {
+  transform: translateY(-3px);
+}
+
+.listing-card h3 {
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.listing-card p {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.price {
+  font-weight: bold;
+  color: #8a6257;
+}
