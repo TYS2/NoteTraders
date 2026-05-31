@@ -28,6 +28,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
 }
 
 .logo {
@@ -60,13 +61,15 @@ body {
   gap: 22px;
 }
 
-.nav-left a {
-  text-decoration: none;
+.nav-left button {
+  border: none;
+  background: none;
   color: black;
-  font-size: 15px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-.nav-left a:hover {
+.nav-left button:hover {
   text-decoration: underline;
 }
 
@@ -119,18 +122,7 @@ select {
   font-weight: bold;
 }
 
-.nav-left button {
-  border: none;
-  background: none;
-  color: black;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.nav-left button:hover {
-  text-decoration: underline;
-}
-
+/* Login page */
 .login-page {
   display: flex;
   justify-content: center;
@@ -192,6 +184,11 @@ select {
   color: #8a6257;
 }
 
+.required-text {
+  font-size: 14px;
+  font-style: italic;
+}
+
 .main-btn,
 .secondary-btn {
   width: 210px;
@@ -209,12 +206,6 @@ select {
   background-color: #6aa383;
 }
 
-.signup-text,
-.login-subtitle,
-.back-btn {
-  display: none;
-}
-
 .back-btn {
   display: block;
   margin: 18px auto 0;
@@ -226,6 +217,24 @@ select {
   font-size: 14px;
 }
 
+/* Status message */
+.status-message {
+  width: fit-content;
+  max-width: 520px;
+  margin: 0 auto 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background-color: #f3eadf;
+  color: #5f443d;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+.homepage-message {
+  margin-bottom: 12px;
+}
+
+/* Listing cards */
 .listing-section {
   margin-top: 40px;
   display: flex;
@@ -241,9 +250,10 @@ select {
   border-radius: 12px;
   padding: 18px;
   text-align: left;
-  cursor: pointer;
+  cursor: default;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   color: #5f443d;
+  transition: transform 0.2s ease;
 }
 
 .listing-card:hover {
@@ -260,7 +270,474 @@ select {
   margin-bottom: 8px;
 }
 
+.listing-meta {
+  color: #786159;
+  font-size: 13px !important;
+}
+
 .price {
   font-weight: bold;
   color: #8a6257;
+}
+
+.empty-state {
+  width: min(420px, 90vw);
+  background-color: #f3eadf;
+  border-radius: 14px;
+  padding: 24px;
+  color: #5f443d;
+}
+
+/* Account and create listing pages */
+.simple-page {
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.simple-card {
+  width: min(560px, 92vw);
+  background-color: #f3eadf;
+  border-radius: 18px;
+  padding: 28px;
+  color: #5f443d;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.simple-card h2 {
+  font-family: Georgia, serif;
+  color: #8a6257;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.simple-card p {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.listing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listing-form label {
+  font-weight: bold;
+}
+
+.listing-form input,
+.listing-form textarea,
+.listing-form select {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background-color: white;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: Arial, sans-serif;
+}
+
+.listing-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.listing-form .main-btn,
+.simple-card .main-btn {
+  align-self: center;
+  margin-top: 12px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 850px) {
+  .navbar {
+    height: auto;
+    padding: 14px 20px;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .nav-left,
+  .nav-right {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .form-row label,
+  .form-row input,
+  .optional-text {
+    grid-column: 1;
+    width: 100%;
+    text-align: left;
+  }
+
+  .login-card {
+    width: min(560px, 90vw);
+  }
+}
+
+/* Account page layout */
+.account-page {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 70px;
+  padding: 20px 55px 40px;
+  background-color: #d8c8b8;
+  color: #8a6257;
+  font-family: Georgia, serif;
+}
+
+.account-message {
+  grid-column: 1 / -1;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #8a6257;
+}
+
+.account-details-card {
+  min-height: 230px;
+  background-color: #f5f0df;
+  border-radius: 28px;
+  padding: 28px 32px;
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.account-info p {
+  font-size: 18px;
+  margin-bottom: 9px;
+}
+
+.account-balance {
+  margin-top: 22px;
+}
+
+.account-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.small-green-btn {
+  border: none;
+  background-color: #7fb395;
+  padding: 7px 17px;
+  border-radius: 18px;
+  font-size: 15px;
+  cursor: pointer;
+  color: black;
+}
+
+.small-green-btn:hover {
+  background-color: #6fa586;
+}
+
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+}
+
+.profile-picture {
+  width: 130px;
+  height: 130px;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.profile-picture span {
+  font-size: 75px;
+  color: #cccccc;
+}
+
+.profile-picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-picture-btn {
+  background-color: #7fb395;
+  padding: 7px 14px;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 14px;
+  color: black;
+}
+
+.upload-picture-btn input {
+  display: none;
+}
+
+/* Chat section */
+.chat-section {
+  margin-top: 70px;
+}
+
+/* My listings */
+.account-right {
+  min-width: 260px;
+}
+
+.listings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.my-listings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  max-height: 650px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.my-listing-card {
+  background-color: #f5f0df;
+  border-radius: 24px;
+  padding: 18px;
+  color: #8a6257;
+}
+
+.my-listing-card h3 {
+  font-size: 19px;
+  margin-bottom: 6px;
+}
+
+.my-listing-card p {
+  font-size: 14px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.listing-small-text {
+  font-size: 13px !important;
+  color: #786159;
+}
+
+.listing-card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.empty-my-listings {
+  background-color: #f5f0df;
+  border-radius: 20px;
+  padding: 25px;
+  font-size: 16px;
+}
+
+.edit-listing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-listing-form input,
+.edit-listing-form textarea,
+.edit-listing-form select {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background-color: white;
+  padding: 9px 10px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+}
+
+.edit-listing-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+@media (max-width: 900px) {
+  .account-page {
+    grid-template-columns: 1fr;
+    gap: 35px;
+    padding: 20px;
+  }
+
+  .account-details-card {
+    flex-direction: column;
+  }
+
+  .account-actions,
+  .listing-card-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+.home-listing-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.listing-detail-page {
+  min-height: calc(100vh - 130px);
+  background-color: #d8c8b8;
+  padding: 55px 80px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Georgia, serif;
+  color: #8a6257;
+}
+
+.listing-detail-card {
+  width: 70%;
+  max-width: 750px;
+  min-height: 360px;
+  background-color: #f5f0df;
+  border-radius: 30px;
+  padding: 38px 45px;
+  display: flex;
+  flex-direction: column;
+}
+
+.no-image-listing-card {
+  justify-content: space-between;
+}
+
+.listing-detail-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.listing-detail-info h2 {
+  font-size: 34px;
+  margin-bottom: 12px;
+  color: #8a6257;
+}
+
+.listing-detail-description {
+  font-size: 22px;
+  line-height: 1.35;
+  margin-bottom: 20px;
+}
+
+.listing-detail-meta {
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+
+.listing-detail-price {
+  font-size: 21px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.listing-detail-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.back-to-home-btn {
+  margin-top: 18px;
+  border: none;
+  background: none;
+  color: #8a6257;
+  font-size: 18px;
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: Georgia, serif;
+}
+
+@media (max-width: 900px) {
+  .listing-detail-page {
+    padding: 30px 20px;
+  }
+
+  .listing-detail-card {
+  width: 100%;
+}
+
+  .listing-detail-actions {
+    justify-content: flex-start;
+  }
+}
+
+.edit-particulars-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-particulars-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 16px;
+}
+
+.edit-particulars-form input {
+  width: 260px;
+  border: none;
+  border-radius: 12px;
+  background-color: white;
+  padding: 9px 12px;
+  font-size: 15px;
+}
+
+.edit-particulars-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.password-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.password-input-group input {
+  width: 100%;
+}
+
+.password-requirement {
+  font-size: 12px;
+  color: #8a6257;
+  margin-top: 6px;
+  margin-bottom: 0;
+  line-height: 1.3;
+  max-width: 310px;
+  text-align: left;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 65px;
+  height: 65px;
+  object-fit: contain;
 }

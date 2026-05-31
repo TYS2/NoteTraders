@@ -1,8 +1,9 @@
 package routes
 
 import (
- "github.com/gin-gonic/gin"
- "backend/handlers"
+	"backend/handlers"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Route(r *gin.Engine) {
@@ -13,5 +14,4 @@ func Route(r *gin.Engine) {
 	r.POST("/updateListing", handlers.UpdateListing)
 	r.POST("/deleteListing", handlers.DeleteListing)
 	r.GET("/listings", handlers.GetAllListings)
-	r.GET("/users", handlers.GetAllUsers)
 }

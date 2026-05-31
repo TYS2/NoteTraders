@@ -2,15 +2,14 @@ package handlers
 
 import (
 	"context"
-	"net/http"
 	"log"
+	"net/http"
 
 	"backend/initializers"
 	"backend/models"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
-
 )
 
 func CreateListing(c *gin.Context) {
@@ -22,11 +21,13 @@ func CreateListing(c *gin.Context) {
 	}
 
 	result, err := client.Database("NoteTraders").Collection("listings").InsertOne(context.TODO(), listing)
-	insertedID := result.InsertedID.(bson.ObjectID)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create listing"})
 		return
 	}
+
+	insertedID := result.InsertedID.(bson.ObjectID)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Listing created successfully", "id": insertedID})
 }
@@ -62,7 +63,7 @@ func DeleteListing(c *gin.Context) {
 		return
 	}
 
-	_,err := client.Database("NoteTraders").Collection("listings").DeleteOne(
+	_, err := client.Database("NoteTraders").Collection("listings").DeleteOne(
 		context.TODO(),
 		bson.M{"_id": listing.ID},
 	)
@@ -75,7 +76,7 @@ func DeleteListing(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Listing deleted successfully"})
 }
 
-func GetAllListings(c *gin.Context){
+func GetAllListings(c *gin.Context) {
 	client := initializers.GetDB()
 	cursor, err := client.Database("NoteTraders").Collection("listings").Find(context.TODO(), bson.M{})
 	if err != nil {
