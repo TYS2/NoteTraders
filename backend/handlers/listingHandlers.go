@@ -9,7 +9,6 @@ import (
 	"backend/models"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func CreateListing(c *gin.Context) {
@@ -20,16 +19,23 @@ func CreateListing(c *gin.Context) {
 		return
 	}
 
-	result, err := client.Database("NoteTraders").Collection("listings").InsertOne(context.TODO(), listing)
+	err := client.QueryRowContext(
+		context.Background(),
+		`INSERT INTO listings (title, description, price, seller_id, level_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		listing.Title,
+		listing.Description,
+		listing.Price,
+		listing.SellerID,
+		listing.AcademicLevelID,
+		listing.SubjectID,
+	).Scan(&listing.ListingID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create listing"})
 		return
 	}
 
-	insertedID := result.InsertedID.(bson.ObjectID)
-
-	c.JSON(http.StatusCreated, gin.H{"message": "Listing created successfully", "id": insertedID})
+	c.JSON(http.StatusCreated, gin.H{"message": "Listing created successfully", "id": listing.ListingID})
 }
 
 func UpdateListing(c *gin.Context) {
@@ -40,19 +46,24 @@ func UpdateListing(c *gin.Context) {
 		return
 	}
 
-	var updatedListing models.Listing
-	err := client.Database("NoteTraders").Collection("listings").FindOneAndUpdate(
-		context.TODO(),
-		bson.M{"_id": listing.ID},
-		bson.M{"$set": listing},
-	).Decode(&updatedListing)
+	 err := client.QueryRowContext(
+		context.Background(),
+		`UPDATE listings SET title=$1, description=$2, price=$3, level_id=$4, subject_id=$5 WHERE id=$6 AND seller_id=$7 RETURNING id`,
+		listing.Title,
+		listing.Description,
+		listing.Price,
+		listing.AcademicLevelID,
+		listing.SubjectID,
+		listing.ListingID,
+		listing.SellerID,
+	).Scan(&listing.ListingID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update listing"})
 		log.Println("Error updating listing:", err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Listing updated successfully", "listing": updatedListing})
+	c.JSON(http.StatusOK, gin.H{"message": "Listing updated successfully", "listing": listing})
 }
 
 func DeleteListing(c *gin.Context) {
@@ -63,9 +74,10 @@ func DeleteListing(c *gin.Context) {
 		return
 	}
 
-	_, err := client.Database("NoteTraders").Collection("listings").DeleteOne(
-		context.TODO(),
-		bson.M{"_id": listing.ID},
+	 err := client.QueryRowContext(
+		context.Background(),
+		`DELETE FROM listings WHERE id=$1`,
+		listing.ListingID,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete listing"})
@@ -78,15 +90,37 @@ func DeleteListing(c *gin.Context) {
 
 func GetAllListings(c *gin.Context) {
 	client := initializers.GetDB()
-	cursor, err := client.Database("NoteTraders").Collection("listings").Find(context.TODO(), bson.M{})
+	rows, err := client.QueryContext(context.Background(), `SELECT id, title, description, price, seller_id, level_id, subject_id FROM listings`)
 	if err != nil {
+		log.Println("Error fetching listings:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch listings"})
 		return
 	}
+	defer rows.Close()
 
 	var listings []models.Listing
-	if err = cursor.All(context.TODO(), &listings); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode listings"})
+
+	for rows.Next() {
+		var listing models.Listing
+		if err := rows.Scan(
+			&listing.ListingID,
+			&listing.Title,
+			&listing.Description,
+			&listing.Price,
+			&listing.SellerID,
+			&listing.AcademicLevelID,
+			&listing.SubjectID,
+		); err != nil {
+			log.Println("Error scanning listing:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode listings"})
+			return
+		}
+		listings = append(listings, listing)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Row iteration error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch listings"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"listings": listings})

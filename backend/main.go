@@ -4,6 +4,9 @@ import (
 	"backend/initializers"
 	"backend/routes"
 	"log"
+	"context"
+	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +23,17 @@ func main() {
 			"connected": "true",
 		})
 	})
+	
+	defer initializers.GetDB().Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := initializers.GetDB().PingContext(ctx); err != nil {
+		log.Fatalf("ping db: %v", err)
+	}
+
+	fmt.Println("Connected to Neon successfully")
 
 	routes.Route(r)
 
