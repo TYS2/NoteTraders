@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"fmt"
 
 	"backend/initializers"
 	"backend/models"
@@ -126,18 +127,77 @@ func DeleteListing(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Listing deleted successfully"})
 }
 
-func GetAllListings(c *gin.Context) {
+func GetListings(c *gin.Context) {
 	client := initializers.GetDB()
-	rows, err := client.QueryContext(context.Background(), `SELECT id, title, description, price, seller_id, level_id, subject_id FROM listings`)
+
+	var listings []models.Listing
+	var sellerID, levelID, subjectID int
+	var minPrice, maxPrice float64
+	var stringLevelID, stringSubjectID, stringMinPrice, stringMaxPrice string
+	stringLevelID = c.Query("level_id")
+	stringSubjectID = c.Query("subject_id")
+	stringMinPrice = c.Query("min_price")
+	stringMaxPrice = c.Query("max_price")
+
+	query :=
+	`SELECT id, title, description, price, seller_id, level_id, subject_id FROM listings WHERE 1=1`
+	var args []interface{}
+	argNum := 1
+
+	// Add filters only if provided
+	if stringSubjectID != "" {
+		subjectID, err := getSubjectIDByName(stringSubjectID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subject filter"})
+			return
+		}
+		query += fmt.Sprintf(" AND subject_id = $%d", argNum)
+		args = append(args, subjectID)
+		argNum++
+	}
+
+	if stringLevelID != "" {
+		levelID, err := getLevelIDByName(stringLevelID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid academic level filter"})
+			return
+		}
+		query += fmt.Sprintf(" AND level_id = $%d", argNum)
+		args = append(args, levelID)
+		argNum++
+	}
+
+	if stringMinPrice != "" {
+		if _, err := fmt.Sscanf(stringMinPrice, "%f", &minPrice); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid minimum price filter"})
+			return
+		}
+		query += fmt.Sprintf(" AND price >= $%d", argNum)
+		args = append(args, minPrice)
+		argNum++
+	}
+
+	if stringMaxPrice != "" {
+		if _, err := fmt.Sscanf(stringMaxPrice, "%f", &maxPrice); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid maximum price filter"})
+			return
+		}
+		query += fmt.Sprintf(" AND price <= $%d", argNum)
+		args = append(args, maxPrice)
+		argNum++
+	}
+
+	rows, err := client.QueryContext(
+		context.Background(),
+		query,
+		args...,
+	)
 	if err != nil {
 		log.Println("Error fetching listings:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch listings"})
 		return
 	}
 	defer rows.Close()
-
-	var listings []models.Listing
-	var sellerID, levelID, subjectID int
 
 	for rows.Next() {
 		var listing models.Listing

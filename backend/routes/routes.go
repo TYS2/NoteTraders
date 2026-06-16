@@ -15,7 +15,7 @@ func Route(r *gin.Engine) {
 	r.POST("/createListing", handlers.CreateListing)
 	r.POST("/updateListing", handlers.UpdateListing)
 	r.POST("/deleteListing", handlers.DeleteListing)
-	r.GET("/listings", handlers.GetAllListings)
+	r.GET("/listings", handlers.GetListings)
 	r.GET("/subjects/:subjectName", handlers.GetSubjectsID)
 	r.POST("/addSubject", handlers.AddSubject)
 	r.GET("/academicLevels/:levelName", handlers.GetLevelsID)
