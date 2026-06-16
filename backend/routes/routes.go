@@ -14,4 +14,8 @@ func Route(r *gin.Engine) {
 	r.POST("/updateListing", handlers.UpdateListing)
 	r.POST("/deleteListing", handlers.DeleteListing)
 	r.GET("/listings", handlers.GetAllListings)
+	r.GET("/subjects/:subjectName", handlers.GetSubjectsID)
+	r.POST("/addSubject", handlers.AddSubject)
+	r.GET("/academicLevels/:levelName", handlers.GetLevelsID)
+	r.POST("/addAcademicLevel", handlers.AddLevel)
 }

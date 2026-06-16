@@ -45,3 +45,14 @@ type Listing struct {
 type DeleteListing struct {
 	ListingID int `json:"id" binding:"required"`
 }
+
+type Subject struct {
+	ID int `json:"id"`
+	Name      string `json:"name"`
+}
+
+type Level struct {
+	ID int `json:"id"`
+	Name    string `json:"name"`
+}
+
