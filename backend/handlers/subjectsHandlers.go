@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"log"
+	"database/sql"
 
 	"backend/initializers"
 	"backend/models"
@@ -48,7 +49,7 @@ func AddSubject(c *gin.Context) {
 func GetSubjectsID(c *gin.Context) {
 	subjectName := strings.TrimSpace(c.Param("subjectName"))
 
-	subject, err := GetSubjectIDByName(subjectName)
+	subject, err := getSubjectIDByName(subjectName)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Subject not found"})
@@ -60,22 +61,52 @@ func GetSubjectsID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"subject": subject})
 }
 
-func GetSubjectIDByName(subjectName string) (models.Subject, error) {
+func getSubjectIDByName(subjectName string) (int, error) {
 	client := initializers.GetDB()
 
-	var subject models.Subject
-	subject.Name = subjectName
+	var subjectID int
 	err := client.QueryRowContext(
 		context.Background(),
 		`SELECT id FROM subjects WHERE subject_name = $1`,
 		subjectName,
-	).Scan(&subject.ID)
+	).Scan(&subjectID)
 	log.Println(err)
 
-	if err != nil {
-		return models.Subject{}, err
+	if err == nil {
+		return subjectID, nil
 	}
-	return subject, nil
+
+	if errors.Is(err, sql.ErrNoRows) {
+		err = client.QueryRowContext(
+			context.Background(),
+			`INSERT INTO subjects (subject_name)
+			 VALUES ($1)
+			 RETURNING id`,
+			subjectName,
+		).Scan(&subjectID)
+
+		if err != nil {
+			return 0, err
+		}
+
+		return subjectID, nil
+	}
+
+	return 0, err
 }
 
+func getSubjectByID(subjectID int) (string, error) {
+	client := initializers.GetDB()
 
+	var subjectName string
+	err := client.QueryRowContext(
+		context.Background(),
+		`SELECT subject_name FROM subjects WHERE id = $1`,
+		subjectID,
+	).Scan(&subjectName)
+
+	if err != nil {
+		return "", err
+	}
+	return subjectName, nil
+}

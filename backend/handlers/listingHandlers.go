@@ -14,28 +14,45 @@ import (
 func CreateListing(c *gin.Context) {
 	client := initializers.GetDB()
 	var listing models.CreateListing
+	var listingID int
 	if err := c.ShouldBindJSON(&listing); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid listing data"})
 		return
 	}
+	SubjectID, err := getSubjectIDByName(listing.Subject)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subject"})
+		return
+	}
+	SellerID, err := getUserIDByName(listing.Seller)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid seller"})
+		return
+	}
+	AcademicLevelID, err := getLevelIDByName(listing.AcademicLevel)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid academic level"})
+		return
+	}
 
-	err := client.QueryRowContext(
+	err = client.QueryRowContext(
 		context.Background(),
 		`INSERT INTO listings (title, description, price, seller_id, level_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
 		listing.Title,
 		listing.Description,
 		listing.Price,
-		listing.SellerID,
-		listing.AcademicLevelID,
-		listing.SubjectID,
-	).Scan(&listing.ListingID)
+		SellerID,
+		AcademicLevelID,
+		SubjectID,
+	).Scan(&listingID)
 
 	if err != nil {
+		log.Println("Error creating listing:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create listing"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Listing created successfully", "id": listing.ListingID})
+	c.JSON(http.StatusCreated, gin.H{"message": "Listing created successfully", "id": listingID})
 }
 
 func UpdateListing(c *gin.Context) {
@@ -45,17 +62,32 @@ func UpdateListing(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid listing data"})
 		return
 	}
+	sellerID, err := getUserIDByName(listing.Seller)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid seller"})
+		return
+	}
+	subjectID, err := getSubjectIDByName(listing.Subject)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subject"})
+		return
+	}
+	levelID, err := getLevelIDByName(listing.AcademicLevel)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid academic level"})
+		return
+	}
 
-	 err := client.QueryRowContext(
+	 err = client.QueryRowContext(
 		context.Background(),
 		`UPDATE listings SET title=$1, description=$2, price=$3, level_id=$4, subject_id=$5 WHERE id=$6 AND seller_id=$7 RETURNING id`,
 		listing.Title,
 		listing.Description,
 		listing.Price,
-		listing.AcademicLevelID,
-		listing.SubjectID,
+		levelID,
+		subjectID,
 		listing.ListingID,
-		listing.SellerID,
+		sellerID,
 	).Scan(&listing.ListingID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update listing"})
@@ -73,12 +105,18 @@ func DeleteListing(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid listing data"})
 		return
 	}
+	sellerID, err := getUserIDByName(c.Query("seller"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid seller"})
+		return
+	}
 
-	 err := client.QueryRowContext(
+	 err = client.QueryRowContext(
 		context.Background(),
-		`DELETE FROM listings WHERE id=$1`,
+		`DELETE FROM listings WHERE id=$1 AND seller_id=$2 RETURNING id`,
 		listing.ListingID,
-	)
+		sellerID,
+	).Scan(&listing.ListingID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete listing"})
 		log.Println("Error deleting listing:", err)
@@ -99,6 +137,7 @@ func GetAllListings(c *gin.Context) {
 	defer rows.Close()
 
 	var listings []models.Listing
+	var sellerID, levelID, subjectID int
 
 	for rows.Next() {
 		var listing models.Listing
@@ -107,14 +146,17 @@ func GetAllListings(c *gin.Context) {
 			&listing.Title,
 			&listing.Description,
 			&listing.Price,
-			&listing.SellerID,
-			&listing.AcademicLevelID,
-			&listing.SubjectID,
+			&sellerID,
+			&levelID,
+			&subjectID,
 		); err != nil {
 			log.Println("Error scanning listing:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode listings"})
 			return
 		}
+		listing.Seller, _ = getUserbyID(sellerID)
+		listing.AcademicLevel, _ = getLevelByID(levelID)
+		listing.Subject, _ = getSubjectByID(subjectID)
 		listings = append(listings, listing)
 	}
 

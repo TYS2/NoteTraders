@@ -23,13 +23,12 @@ type UpdateUser struct {
 }
 
 type CreateListing struct {
-	ListingID     int  `json:"id"`
 	Title         string  `json:"title" binding:"required"`
 	Description   string  `json:"description" binding:"required"`
 	Price         float64 `json:"price" binding:"required"`
-	SellerID      int  `json:"seller" binding:"required"`
-	AcademicLevelID int  `json:"academicLevel" binding:"required"`
-	SubjectID       int  `json:"subject" binding:"required"`
+	Seller      string  `json:"seller" binding:"required"`
+	AcademicLevel string  `json:"academicLevel" binding:"required"`
+	Subject       string  `json:"subject" binding:"required"`
 }
 
 type Listing struct {
@@ -37,9 +36,9 @@ type Listing struct {
 	Title         string        `json:"title" `
 	Description   string        `json:"description"`
 	Price         float64       `json:"price" `
-	SellerID      int        `json:"seller" binding:"required"`
-	AcademicLevelID int        `json:"academicLevel" `
-	SubjectID       int        `json:"subject" `
+	Seller      string  `json:"seller"`
+	AcademicLevel string  `json:"academicLevel" `
+	Subject       string  `json:"subject" `
 }
 
 type DeleteListing struct {

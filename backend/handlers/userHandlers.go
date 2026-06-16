@@ -204,3 +204,35 @@ func UpdateUser(c *gin.Context) {
 		"user":    user,
 	})
 }
+
+func getUserIDByName(username string) (int, error) {
+	client := initializers.GetDB()
+
+	var userID int
+	err := client.QueryRowContext(
+		context.Background(),
+		`SELECT id FROM users WHERE username = $1`,
+		username,
+	).Scan(&userID)
+
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
+}
+
+func getUserbyID(accountID int) (string, error) {
+	client := initializers.GetDB()
+	
+	var username string
+	err := client.QueryRowContext(
+		context.Background(),
+		`SELECT username FROM users WHERE id = $1`,
+		accountID,
+	).Scan(&username)
+
+	if err != nil {
+		return "", err
+	}
+	return username, nil
+}

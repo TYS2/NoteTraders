@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"database/sql"
 
 	"backend/initializers"
 	"backend/models"
@@ -47,7 +48,7 @@ func AddLevel(c *gin.Context) {
 func GetLevelsID(c *gin.Context) {
 	levelName := strings.TrimSpace(c.Param("levelName"))
 
-	level, err := GetLevelIDByName(levelName)
+	level, err := getLevelIDByName(levelName)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Level not found"})
@@ -59,20 +60,50 @@ func GetLevelsID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"level": level})
 }
 
-func GetLevelIDByName(levelName string) (models.Level, error) {
+func getLevelIDByName(levelName string) (int, error) {
 	client := initializers.GetDB()
 
-	var level models.Level
-	level.Name = levelName
+	var levelID int
 	err := client.QueryRowContext(
 		context.Background(),
 		`SELECT id FROM academic_levels WHERE level_name = $1`,
 		levelName,
-	).Scan(&level.ID)
+	).Scan(&levelID)
 
-	if err != nil {
-		return models.Level{}, err
+	if err == nil {
+		return levelID, nil
 	}
-	return level, nil
+
+	if errors.Is(err, sql.ErrNoRows) {
+		err = client.QueryRowContext(
+			context.Background(),
+			`INSERT INTO academic_levels (level_name)
+			 VALUES ($1)
+			 RETURNING id`,
+			levelName,
+		).Scan(&levelID)
+
+		if err != nil {
+			return 0, err
+		}
+
+		return levelID, nil
+	}
+	return 0, err
 }
 
+func getLevelByID(levelID int) (string, error) {
+	client := initializers.GetDB()
+
+	var levelName string
+	err := client.QueryRowContext(
+		context.Background(),
+		`SELECT level_name FROM academic_levels WHERE id = $1`,
+		levelID,
+	).Scan(&levelName)
+
+	if err != nil {
+		return "", err
+	}
+	return levelName, nil
+}
