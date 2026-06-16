@@ -7,6 +7,12 @@ type User struct {
 	Password    string        `json:"password"`
 	Email       string        `json:"email" binding:"required,email"`
 	PhoneNumber string        `json:"phoneNumber" binding:"required"`
+	Balance     float64       `json:"balance"`
+}
+
+type UserTransaction struct {
+	AccountID   int			 `json:"id"`
+	Amount      float64       `json:"amount"`
 }
 
 type LoginUser struct {

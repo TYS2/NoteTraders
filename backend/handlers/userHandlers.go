@@ -130,10 +130,10 @@ func Login(c *gin.Context) {
 	var result models.User
 	err := client.QueryRowContext(
 		context.Background(),
-		`SELECT id, username, email, phone_number FROM users WHERE username = $1 AND password = $2`,
+		`SELECT id, username, email, phone_number, balance FROM users WHERE username = $1 AND password = $2`,
 		user.Username,
 		user.Password,
-	).Scan(&result.AccountID, &result.Username, &result.Email, &result.PhoneNumber)
+	).Scan(&result.AccountID, &result.Username, &result.Email, &result.PhoneNumber, &result.Balance)
 
 	if err != nil {
 		log.Println("Error occurred while fetching user:", err)
@@ -236,3 +236,59 @@ func getUserbyID(accountID int) (string, error) {
 	}
 	return username, nil
 }
+
+func IncreaseUserBalance(c *gin.Context) {
+	client := initializers.GetDB()
+
+	var transaction models.UserTransaction
+	if err := c.ShouldBindJSON(&transaction); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction data"})
+		return
+	}
+
+	_, err := client.ExecContext(
+		context.Background(),
+		`UPDATE users SET balance = balance + $1 WHERE id = $2`,
+		transaction.Amount,
+		transaction.AccountID,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to increase balance"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Balance increased successfully"})
+	return
+}
+
+func DecreaseUserBalance(c *gin.Context) {
+	client := initializers.GetDB()
+
+	var transaction models.UserTransaction
+	if err := c.ShouldBindJSON(&transaction); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction data"})
+		return
+	}
+
+	_, err := client.ExecContext(
+		context.Background(),
+		`UPDATE users SET balance = balance - $1 WHERE id = $2`,
+		transaction.Amount,
+		transaction.AccountID,
+	)
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23514" { // Check violation (e.g., balance cannot be negative)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decrease balance"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Balance decreased successfully"})
+	return
+}
+
