@@ -227,3 +227,32 @@ func GetListings(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"listings": listings})
 }
+
+func SearchListings(c *gin.Context) {
+    client := initializers.GetDB()
+    search := c.Query("searchTerm")
+
+    rows, err := client.QueryContext(
+        context.Background(),
+        `SELECT id, title, description, price
+         FROM listings
+         WHERE title ILIKE $1 OR description ILIKE $1`,
+        "%"+search+"%",
+    )
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    defer rows.Close()
+
+    var listings []models.Listing
+    for rows.Next() {
+        var listing models.Listing
+        if err := rows.Scan(&listing.ListingID, &listing.Title, &listing.Description, &listing.Price); err != nil {
+            continue
+        }
+        listings = append(listings, listing)
+    }
+
+    c.JSON(http.StatusOK, listings)
+}
