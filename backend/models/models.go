@@ -8,6 +8,8 @@ type User struct {
 	Email       string        `json:"email" binding:"required,email"`
 	PhoneNumber string        `json:"phoneNumber" binding:"required"`
 	Balance     float64       `json:"balance"`
+	ImageKey	string		  
+
 }
 
 type UserTransaction struct {

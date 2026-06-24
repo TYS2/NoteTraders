@@ -8,6 +8,7 @@ import (
 
 func Route(r *gin.Engine) {
 	r.POST("/signup", handlers.Signup)
+	r.PATCH("/users/:id/profile-picture", handlers.UploadProfilePicture)
 	r.POST("/login", handlers.Login)
 	r.POST("/updateUser", handlers.UpdateUser)
 	r.POST("/addBalance", handlers.IncreaseUserBalance)
