@@ -60,6 +60,7 @@ function App() {
   const [subjectFilter, setSubjectFilter] = useState("");
   const [priceFilter, setPriceFilter] = useState("");
 
+  const [ProfilePictureFile, setProfilePictureFile] =useState<File|null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [editingListingId, setEditingListingId] = useState<string | null>(null);
   const [editListingForm, setEditListingForm] = useState(emptyListingForm);
@@ -165,6 +166,21 @@ function App() {
       if (!response.ok) {
         throw new Error(data.error || "Signup failed");
       }
+
+      if (ProfilePictureFile){
+        const form=new FormData();
+        form.append("profile_picture", ProfilePictureFile)
+        const pfpResponse = await fetch("/users/profile-picture",{
+          method:"POST",
+          body: form,
+        })
+
+        const pfpData = await response.json()
+        if (!pfpResponse.ok){
+          throw new Error(pfpData.error || "Profile picture upload failed")
+        }
+      }
+
 
       setMessage("Signup successful! You can now log in.");
 
@@ -452,6 +468,7 @@ function App() {
 
     const imageUrl = URL.createObjectURL(file);
     setProfilePicture(imageUrl);
+    setProfilePictureFile(file)
   }
 
   function startEditListing(listing: Listing) {
