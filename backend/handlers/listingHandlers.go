@@ -4,9 +4,12 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
+	"os"
 
 	"backend/initializers"
 	"backend/models"
+	"backend/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -166,4 +169,53 @@ func GetAllListings(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"listings": listings})
+}
+
+func UploadListingPicture(c *gin.Context) {
+	db := initializers.GetDB()
+	r2Client := services.NewR2Client()
+
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	fileHeader, err := c.FormFile("listing_picture")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "listing_picture is required"})
+		return
+	}
+
+	key, url, err := services.UploadFileToR2(
+		c.Request.Context(),
+		r2Client,
+		os.Getenv("R2_BUCKET"),
+		"listings",
+		fileHeader,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload image"})
+		return
+	}
+
+	_, err = db.ExecContext(
+		context.Background(),
+		`UPDATE listings
+		 SET photo_key = $1, photo_url=$2
+		 WHERE id = $3`,
+		key,
+		url,
+		userID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":             "profile picture updated",
+		"profile_picture_url":  url,
+		"profile_picture_key":  key,
+	})
 }
