@@ -5,9 +5,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"strconv"
+	"os"
 
 	"backend/initializers"
-	"backend/models"
+	"backend/models"	
+	"backend/services"
 
 	"github.com/gin-gonic/gin"
 	"errors"
@@ -81,7 +84,56 @@ func Signup(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Signup successful",
-		"user":    user,
+		"user":    user.AccountID,
+	})
+}
+
+func UploadProfilePicture(c *gin.Context) {
+	db := initializers.GetDB()
+	r2Client := services.NewR2Client()
+
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	fileHeader, err := c.FormFile("profile_picture")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "profile_picture is required"})
+		return
+	}
+
+	key, url, err := services.UploadFileToR2(
+		c.Request.Context(),
+		r2Client,
+		os.Getenv("R2_BUCKET"),
+		"profiles",
+		fileHeader,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload image"})
+		return
+	}
+
+	_, err = db.ExecContext(
+		context.Background(),
+		`UPDATE users
+		 SET pfp_key = $1, pfp_url=$2
+		 WHERE id = $3`,
+		key,
+		url,
+		userID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":             "profile picture updated",
+		"profile_picture_url":  url,
+		"profile_picture_key":  key,
 	})
 }
 
@@ -291,4 +343,3 @@ func DecreaseUserBalance(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Balance decreased successfully"})
 	return
 }
-

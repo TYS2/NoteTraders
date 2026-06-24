@@ -8,6 +8,7 @@ import (
 
 func Route(r *gin.Engine) {
 	r.POST("/signup", handlers.Signup)
+	r.PATCH("/users/:id/profile-picture", handlers.UploadProfilePicture)
 	r.POST("/login", handlers.Login)
 	r.POST("/updateUser", handlers.UpdateUser)
 	r.POST("/addBalance", handlers.IncreaseUserBalance)
@@ -15,6 +16,8 @@ func Route(r *gin.Engine) {
 	r.POST("/createListing", handlers.CreateListing)
 	r.POST("/updateListing", handlers.UpdateListing)
 	r.POST("/deleteListing", handlers.DeleteListing)
+	r.GET("/listings", handlers.GetAllListings)
+	r.PATCH("/listings/:id/listing-picture", handlers.UploadListingPicture)
 	r.GET("/listings", handlers.GetListings)
 	r.GET("/listings/search", handlers.SearchListings)
 	r.GET("/subjects/:subjectName", handlers.GetSubjectsID)
