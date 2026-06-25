@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"os"
+	"fmt"
 
 	"backend/initializers"
 	"backend/models"
@@ -277,6 +278,7 @@ func UploadListingPicture(c *gin.Context) {
 		"profile_picture_url":  url,
 		"profile_picture_key":  key,
 	})
+}
 func SearchListings(c *gin.Context) {
     client := initializers.GetDB()
     search := c.Query("searchTerm")
