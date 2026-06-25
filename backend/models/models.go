@@ -1,14 +1,20 @@
 package models
 
-import "go.mongodb.org/mongo-driver/v2/bson"
 
 type User struct {
-	ID          bson.ObjectID `json:"id" bson:"_id,omitempty"`
-	AccountID   int64         `json:"accountId" bson:"accountId"`
-	Username    string        `json:"username" bson:"username"`
-	Password    string        `json:"password" bson:"password"`
-	Email       string        `json:"email" bson:"email" binding:"required,email"`
-	PhoneNumber string        `json:"phoneNumber" bson:"phoneNumber" binding:"required"`
+	AccountID   int			 `json:"id"`
+	Username    string        `json:"username"`
+	Password    string        `json:"password"`
+	Email       string        `json:"email" binding:"required,email"`
+	PhoneNumber string        `json:"phoneNumber" binding:"required"`
+	Balance     float64       `json:"balance"`
+	ImageKey	string		  
+
+}
+
+type UserTransaction struct {
+	AccountID   int			 `json:"id"`
+	Amount      float64       `json:"amount"`
 }
 
 type LoginUser struct {
@@ -17,31 +23,43 @@ type LoginUser struct {
 }
 
 type UpdateUser struct {
-	AccountID   int64  `json:"accountId" bson:"accountId"`
-	Username    string `json:"username" bson:"username"`
-	Email       string `json:"email" bson:"email"`
-	PhoneNumber string `json:"phoneNumber" bson:"phoneNumber"`
+	AccountID   int			 `json:"id" binding:"required"`
+	Username    string        `json:"username"`
+	Password    string        `json:"password"`
+	Email       string        `json:"email" `
+	PhoneNumber string        `json:"phoneNumber"`
 }
 
 type CreateListing struct {
-	Title         string  `json:"title" bson:"title"`
-	Description   string  `json:"description" bson:"description"`
-	Price         float64 `json:"price" bson:"price"`
-	Seller        string  `json:"seller" bson:"seller"`
-	AcademicLevel string  `json:"academicLevel" bson:"academicLevel"`
-	Subject       string  `json:"subject" bson:"subject"`
+	Title         string  `json:"title" binding:"required"`
+	Description   string  `json:"description" binding:"required"`
+	Price         float64 `json:"price" binding:"required"`
+	Seller      string  `json:"seller" binding:"required"`
+	AcademicLevel string  `json:"academicLevel" binding:"required"`
+	Subject       string  `json:"subject" binding:"required"`
 }
 
 type Listing struct {
-	ID            bson.ObjectID `json:"id" bson:"_id,omitempty"`
-	Title         string        `json:"title" bson:"title"`
-	Description   string        `json:"description" bson:"description"`
-	Price         float64       `json:"price" bson:"price"`
-	Seller        string        `json:"seller" bson:"seller"`
-	AcademicLevel string        `json:"academicLevel" bson:"academicLevel"`
-	Subject       string        `json:"subject" bson:"subject"`
+	ListingID     int `json:"id" binding:"required"`
+	Title         string        `json:"title" `
+	Description   string        `json:"description"`
+	Price         float64       `json:"price" `
+	Seller      string  `json:"seller"`
+	AcademicLevel string  `json:"academicLevel" `
+	Subject       string  `json:"subject" `
 }
 
 type DeleteListing struct {
-	ID bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	ListingID int `json:"id" binding:"required"`
 }
+
+type Subject struct {
+	ID int `json:"id"`
+	Name      string `json:"name"`
+}
+
+type Level struct {
+	ID int `json:"id"`
+	Name    string `json:"name"`
+}
+

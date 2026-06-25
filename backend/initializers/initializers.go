@@ -1,40 +1,34 @@
 package initializers
 
 import (
-	"context"
+	"database/sql"
 	"log"
 	"os"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-var DB *mongo.Client
+var db *sql.DB
 
 func ConnectDB() {
 	er := godotenv.Load()
 	if er != nil {
-		log.Fatal("Error loading .env file:", er)
+		log.Fatal("Error loading .env file")
 	}
-	uri := os.Getenv("MONGODB_URI")
-	if uri == "" {
-		log.Fatal("Set your 'MONGODB_URI' environment variable.")
-	}
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
-	var err error
-	DB, err = mongo.Connect(opts)
-	if err != nil {
-		log.Fatal("Could not connect to MongoDB:", err)
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is not set")
 	}
 
-	// Pings the database to verify connection
-	if err := DB.Ping(context.TODO(), nil); err != nil {
-		log.Fatal("Could not ping MongoDB:", err)
+	var err error
+	db, err = sql.Open("pgx", dsn)
+	if err != nil {
+		log.Fatalf("open db: %v", err)
 	}
 }
 
-func GetDB() *mongo.Client {
-	return DB
+
+func GetDB() *sql.DB {
+	return db
 }
