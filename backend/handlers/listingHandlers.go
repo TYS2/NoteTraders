@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"os"
+	"strconv"
 
 	"backend/initializers"
 	"backend/models"
@@ -81,7 +82,7 @@ func UpdateListing(c *gin.Context) {
 		return
 	}
 
-	 err = client.QueryRowContext(
+	err = client.QueryRowContext(
 		context.Background(),
 		`UPDATE listings SET title=$1, description=$2, price=$3, level_id=$4, subject_id=$5 WHERE id=$6 AND seller_id=$7 RETURNING id`,
 		listing.Title,
@@ -114,7 +115,7 @@ func DeleteListing(c *gin.Context) {
 		return
 	}
 
-	 err = client.QueryRowContext(
+	err = client.QueryRowContext(
 		context.Background(),
 		`DELETE FROM listings WHERE id=$1 AND seller_id=$2 RETURNING id`,
 		listing.ListingID,
@@ -142,7 +143,7 @@ func GetListings(c *gin.Context) {
 	stringMaxPrice = c.Query("max_price")
 
 	query :=
-	`SELECT id, title, description, price, seller_id, level_id, subject_id FROM listings WHERE 1=1`
+		`SELECT id, title, description, price, seller_id, level_id, subject_id FROM listings WHERE 1=1`
 	var args []interface{}
 	argNum := 1
 
@@ -274,34 +275,35 @@ func UploadListingPicture(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":             "profile picture updated",
-		"profile_picture_url":  url,
-		"profile_picture_key":  key,
+		"profile_picture_url": url,
+		"profile_picture_key": key,
 	})
+}
 func SearchListings(c *gin.Context) {
-    client := initializers.GetDB()
-    search := c.Query("searchTerm")
+	client := initializers.GetDB()
+	search := c.Query("searchTerm")
 
-    rows, err := client.QueryContext(
-        context.Background(),
-        `SELECT id, title, description, price
+	rows, err := client.QueryContext(
+		context.Background(),
+		`SELECT id, title, description, price
          FROM listings
          WHERE title ILIKE $1 OR description ILIKE $1`,
-        "%"+search+"%",
-    )
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    defer rows.Close()
+		"%"+search+"%",
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
 
-    var listings []models.Listing
-    for rows.Next() {
-        var listing models.Listing
-        if err := rows.Scan(&listing.ListingID, &listing.Title, &listing.Description, &listing.Price); err != nil {
-            continue
-        }
-        listings = append(listings, listing)
-    }
+	var listings []models.Listing
+	for rows.Next() {
+		var listing models.Listing
+		if err := rows.Scan(&listing.ListingID, &listing.Title, &listing.Description, &listing.Price); err != nil {
+			continue
+		}
+		listings = append(listings, listing)
+	}
 
-    c.JSON(http.StatusOK, listings)
+	c.JSON(http.StatusOK, listings)
 }
