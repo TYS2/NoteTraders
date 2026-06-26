@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type User struct {
 	AccountID         int     `json:"id"`
 	Username          string  `json:"username"`
@@ -63,7 +65,16 @@ type Level struct {
 }
 
 type Purchase struct {
-	BuyerID int `json:"buyerID`
-	SellerID int `json:"sellerID`
-	ListingID int `json:"listingID`
+	BuyerID   int `json:"buyerID" binding:"required"`
+	ListingID int `json:"listingID" binding:"required"`
+}
+
+type TransactionHistoryItem struct {
+	ID             int       `json:"id"`
+	ListingID      int       `json:"listingID"`
+	Title          string    `json:"title"`
+	Price          float64   `json:"price"`
+	BuyerUsername  string    `json:"buyerUsername"`
+	SellerUsername string    `json:"sellerUsername"`
+	PurchasedAt    time.Time `json:"purchasedAt"`
 }

@@ -14,6 +14,7 @@ func Route(r *gin.Engine) {
 	r.POST("/addBalance", handlers.IncreaseUserBalance)
 	r.POST("/withdrawBalance", handlers.DecreaseUserBalance)
 	r.POST("/purchaseListing", handlers.PurchaseListing)
+	r.GET("/transactions/:id", handlers.GetUserTransactions)
 	r.POST("/createListing", handlers.CreateListing)
 	r.POST("/updateListing", handlers.UpdateListing)
 	r.POST("/deleteListing", handlers.DeleteListing)
