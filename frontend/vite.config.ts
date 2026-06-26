@@ -17,6 +17,14 @@ export default defineConfig({
         target: "http://localhost:8080",
         changeOrigin: true,
       },
+      "/addBalance": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/withdrawBalance": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
       "/createListing": {
         target: "http://localhost:8080",
         changeOrigin: true,

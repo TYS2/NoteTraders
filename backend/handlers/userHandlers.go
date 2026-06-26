@@ -4,16 +4,17 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strings"
-	"strconv"
 	"os"
+	"strconv"
+	"strings"
 
 	"backend/initializers"
-	"backend/models"	
+	"backend/models"
 	"backend/services"
 
-	"github.com/gin-gonic/gin"
 	"errors"
+
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -71,7 +72,7 @@ func Signup(c *gin.Context) {
 		user.Email,
 		user.PhoneNumber,
 	).Scan(&user.AccountID)
-	if err!= nil {
+	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // Unique violation
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
@@ -132,8 +133,8 @@ func UploadProfilePicture(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":             "profile picture updated",
-		"profile_picture_url":  url,
-		"profile_picture_key":  key,
+		"profile_picture_url": url,
+		"profile_picture_key": key,
 	})
 }
 
@@ -149,10 +150,17 @@ func Login(c *gin.Context) {
 	var result models.User
 	err := client.QueryRowContext(
 		context.Background(),
-		`SELECT id, username, email, phone_number, balance FROM users WHERE username = $1 AND password = $2`,
+		`SELECT id, username, email, phone_number, balance, COALESCE(pfp_url, '') FROM users WHERE username = $1 AND password = $2`,
 		user.Username,
 		user.Password,
-	).Scan(&result.AccountID, &result.Username, &result.Email, &result.PhoneNumber, &result.Balance)
+	).Scan(
+		&result.AccountID,
+		&result.Username,
+		&result.Email,
+		&result.PhoneNumber,
+		&result.Balance,
+		&result.ProfilePictureUrl,
+	)
 
 	if err != nil {
 		log.Println("Error occurred while fetching user:", err)
@@ -199,7 +207,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-
 	_, err := client.ExecContext(
 		context.Background(),
 		`UPDATE users SET username = $1, email = $2, phone_number = $3 WHERE id = $4`,
@@ -207,7 +214,7 @@ func UpdateUser(c *gin.Context) {
 		user.Email,
 		user.PhoneNumber,
 		user.AccountID)
-	if err!= nil {
+	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // Unique violation
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
@@ -242,7 +249,7 @@ func getUserIDByName(username string) (int, error) {
 
 func getUserbyID(accountID int) (string, error) {
 	client := initializers.GetDB()
-	
+
 	var username string
 	err := client.QueryRowContext(
 		context.Background(),
