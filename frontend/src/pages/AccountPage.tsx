@@ -31,6 +31,8 @@ function AccountPage() {
     setMessage,
     topUpBalance,
     withdrawBalance,
+    itemsSold,
+    itemsPurchased,
   } = useAppContext();
 
   async function handleTopUp(event: React.FormEvent<HTMLFormElement>) {
@@ -45,6 +47,26 @@ function AccountPage() {
 
     const success = await withdrawBalance(Number(withdrawAmount));
     if (success) setWithdrawAmount("");
+  }
+
+  function formatPrice(price: number) {
+    return price === 0 ? "Free" : `$${Number(price).toFixed(2)}`;
+  }
+
+  function formatTransactionDate(dateValue?: string) {
+    if (!dateValue) return "-";
+
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) return "-";
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${hours}:${minutes} ${day}/${month}/${year}`;
   }
 
   return (
@@ -196,8 +218,64 @@ function AccountPage() {
           </div>
         </div>
 
-        <section className="chat-section">
-          <h2 className="section-title">My Chats</h2>
+        <section className="account-history-section" id="purchase-history">
+          <div>
+            <h2 className="section-title">Items Sold</h2>
+
+            <div className="transaction-list">
+              {itemsSold.length === 0 ? (
+                <div className="transaction-card">
+                  <p>No items sold yet.</p>
+                </div>
+              ) : (
+                itemsSold.map((item, index) => (
+                  <div
+                    className="transaction-card"
+                    key={item.id || `${item.title}-sold-${index}`}
+                  >
+                    <h3>{item.title}</h3>
+
+                    <p>Price: {formatPrice(item.price)}</p>
+
+                    <p>Buyer: {item.buyerUsername}</p>
+
+                    <p>Sold on: {formatTransactionDate(item.purchasedAt)}</p>
+
+                    <button className="small-green-btn">Contact Buyer</button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="section-title">Items Purchased</h2>
+
+            <div className="transaction-list">
+              {itemsPurchased.length === 0 ? (
+                <div className="transaction-card">
+                  <p>No items purchased yet.</p>
+                </div>
+              ) : (
+                itemsPurchased.map((item, index) => (
+                  <div
+                    className="transaction-card"
+                    key={item.id || `${item.title}-purchased-${index}`}
+                  >
+                    <h3>{item.title}</h3>
+
+                    <p>Price: {formatPrice(item.price)}</p>
+
+                    <p>Seller: {item.sellerUsername}</p>
+
+                    <p>Purchased on: {formatTransactionDate(item.purchasedAt)}</p>
+
+                    <button className="small-green-btn">Contact Seller</button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </section>
       </section>
 

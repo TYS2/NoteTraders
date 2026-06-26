@@ -5,7 +5,13 @@ function ListingPage() {
   const navigate = useNavigate();
   const { listingId } = useParams();
 
-  const { getListingById, isLoadingListings } = useAppContext();
+  const {
+    getListingById,
+    isLoadingListings,
+    purchaseListing,
+    currentUser,
+    setMessage,
+  } = useAppContext();
 
   const selectedListing = getListingById(listingId);
 
@@ -27,6 +33,16 @@ function ListingPage() {
         </button>
       </main>
     );
+  }
+
+  async function handleBuy() {
+    if (!selectedListing) return;
+
+    const success = await purchaseListing(selectedListing);
+
+    if (success) {
+      navigate("/account");
+    }
   }
 
   return (
@@ -65,8 +81,20 @@ function ListingPage() {
         </div>
 
         <div className="listing-detail-actions">
-          <button className="small-green-btn">Buy</button>
-          <button className="small-green-btn">Chat with seller</button>
+          <button
+            className="small-green-btn"
+            onClick={handleBuy}
+            disabled={currentUser?.username === selectedListing.seller}
+          >
+            Buy
+          </button>
+
+          <button
+            className="small-green-btn"
+            onClick={() => setMessage("Chat is not implemented yet.")}
+          >
+            Chat with seller
+          </button>
         </div>
       </section>
 

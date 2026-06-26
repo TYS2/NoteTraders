@@ -12,6 +12,7 @@ import type {
   ListingForm,
   LoginForm,
   SignupForm,
+  TransactionItem,
   User,
 } from "../types";
 import { emptyListingForm } from "../constants";
@@ -76,6 +77,11 @@ type AppContextValue = {
   updateListing: (listingId: string | number) => Promise<void>;
   deleteListing: (listingId: string | number) => Promise<void>;
 
+  itemsSold: TransactionItem[];
+  itemsPurchased: TransactionItem[];
+  fetchTransactionItems: () => Promise<void>;
+  purchaseListing: (listing: Listing) => Promise<boolean>;
+
   getListingById: (listingId: string | undefined) => Listing | null;
 };
 
@@ -121,6 +127,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(storedUser);
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
+
+  const [itemsSold, setItemsSold] = useState<TransactionItem[]>([]);
+  const [itemsPurchased, setItemsPurchased] = useState<TransactionItem[]>([]);
 
   const [signupForm, setSignupForm] = useState<SignupForm>({
     username: "",
@@ -230,6 +239,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchListings();
   }, []);
+
+  useEffect(() => {
+    if (currentUser?.accountId || currentUser?.id) {
+      fetchTransactionItems();
+    } else {
+      setItemsSold([]);
+      setItemsPurchased([]);
+    }
+  }, [currentUser?.accountId, currentUser?.id]);
 
   async function signup() {
     setMessage("");
@@ -430,6 +448,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("currentUser", JSON.stringify(updatedUser));
   }
 
+  function getCurrentUserId() {
+    const id = currentUser?.accountId ?? currentUser?.id;
+
+    if (id === undefined || id === null || id === "") {
+      return null;
+    }
+
+    const numericId = Number(id);
+    return Number.isFinite(numericId) ? numericId : null;
+  }
+
   function getValidTransactionAmount(amount: number) {
     const validAmount = Number(amount);
 
@@ -499,6 +528,108 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function withdrawBalance(amount: number) {
     return changeBalance("/withdrawBalance", amount, "Withdraw successful!");
+  }
+
+  async function fetchTransactionItems() {
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+      setItemsSold([]);
+      setItemsPurchased([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/transactions/${userId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch transaction history");
+      }
+
+      setItemsSold(data.itemsSold || []);
+      setItemsPurchased(data.itemsPurchased || []);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function purchaseListing(listing: Listing) {
+    setMessage("");
+
+    if (!currentUser) {
+      setMessage("Please sign in first.");
+      return false;
+    }
+
+    const buyerID = getCurrentUserId();
+
+    if (!buyerID) {
+      setMessage("Unable to purchase because account ID is missing.");
+      return false;
+    }
+
+    if (!listing.id) {
+      setMessage("Unable to purchase because listing ID is missing.");
+      return false;
+    }
+
+    if (listing.seller === currentUser.username) {
+      setMessage("You cannot buy your own listing.");
+      return false;
+    }
+
+    try {
+      const response = await fetch("/purchaseListing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          buyerID,
+          listingID: Number(listing.id),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Purchase failed");
+      }
+
+      const updatedBalance =
+        data.buyerBalance !== undefined
+          ? Number(data.buyerBalance)
+          : Number(currentUser.balance ?? 0) - Number(listing.price);
+
+      saveCurrentUser({
+        ...currentUser,
+        balance: Number(updatedBalance.toFixed(2)),
+      });
+
+      setListings((previousListings) =>
+        previousListings.filter((item) => String(item.id) !== String(listing.id))
+      );
+
+      setItemsPurchased((previousItems) => [
+        {
+          title: listing.title,
+          price: listing.price,
+          buyerUsername: currentUser.username,
+          sellerUsername: listing.seller,
+          purchasedAt: new Date().toISOString(),
+        },
+        ...previousItems,
+      ]);
+
+      await fetchTransactionItems();
+
+      setMessage("Purchase successful!");
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Purchase failed");
+      return false;
+    }
   }
 
   function startEditParticulars() {
@@ -801,6 +932,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cancelEditListing,
     updateListing,
     deleteListing,
+
+    itemsSold,
+    itemsPurchased,
+    fetchTransactionItems,
+    purchaseListing,
 
     getListingById,
   };

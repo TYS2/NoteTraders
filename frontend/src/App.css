@@ -463,9 +463,43 @@ select {
   display: none;
 }
 
-/* Chat section */
-.chat-section {
-  margin-top: 70px;
+/* Purchase history */
+.account-history-section {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+}
+
+.transaction-card {
+  width: 100%;
+  max-width: 310px;
+  min-height: 160px;
+  background-color: #f5f0df;
+  border-radius: 32px;
+  padding: 20px 26px 10px;
+  color: #8a6257;
+}
+
+.transaction-card h3 {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.transaction-card p {
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+
+.transaction-card .small-green-btn {
+  margin-top: 4px;
+  min-width: 160px;
 }
 
 /* My listings */
@@ -768,6 +802,15 @@ select {
     width: 100%;
     max-width: 100%;
     height: 240px;
+  }
+
+  .account-history-section {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .transaction-card {
+    max-width: 100%;
   }
 }
 

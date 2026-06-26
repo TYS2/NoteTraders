@@ -47,3 +47,13 @@ export type EditUserForm = {
   email: string;
   phoneNumber: string;
 };
+
+export type TransactionItem = {
+  id?: string | number;
+  listingID?: string | number;
+  title: string;
+  price: number;
+  buyerUsername: string;
+  sellerUsername: string;
+  purchasedAt?: string;
+};
