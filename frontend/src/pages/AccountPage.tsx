@@ -6,6 +6,8 @@ import { useAppContext } from "../context/AppContext";
 function AccountPage() {
   const navigate = useNavigate();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [topUpAmount, setTopUpAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
 
   const {
     message,
@@ -26,7 +28,24 @@ function AccountPage() {
     cancelEditListing,
     updateListing,
     deleteListing,
+    setMessage,
+    topUpBalance,
+    withdrawBalance,
   } = useAppContext();
+
+  async function handleTopUp(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const success = await topUpBalance(Number(topUpAmount));
+    if (success) setTopUpAmount("");
+  }
+
+  async function handleWithdraw(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const success = await withdrawBalance(Number(withdrawAmount));
+    if (success) setWithdrawAmount("");
+  }
 
   return (
     <main className="account-page">
@@ -111,12 +130,47 @@ function AccountPage() {
               </>
             )}
 
-            <p className="account-balance">Account Balance: -</p>
+            <p className="account-balance">
+              Account Balance: ${Number(currentUser?.balance ?? 0).toFixed(2)}
+            </p>
 
             <div className="account-actions">
-              <button className="small-green-btn">Top Up</button>
-              <button className="small-green-btn">Withdraw</button>
-              <button className="small-green-btn">
+              <form className="transaction-form" onSubmit={handleTopUp}>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Amount"
+                  value={topUpAmount}
+                  onChange={(event) => setTopUpAmount(event.target.value)}
+                />
+
+                <button className="small-green-btn" type="submit">
+                  Top Up
+                </button>
+              </form>
+
+              <form className="transaction-form" onSubmit={handleWithdraw}>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Amount"
+                  value={withdrawAmount}
+                  onChange={(event) => setWithdrawAmount(event.target.value)}
+                />
+
+                <button className="small-green-btn" type="submit">
+                  Withdraw
+                </button>
+              </form>
+
+              <button
+                className="small-green-btn"
+                onClick={() =>
+                  setMessage("Transaction history is not implemented yet.")
+                }
+              >
                 View Transaction History
               </button>
             </div>

@@ -794,3 +794,17 @@ select {
     width: min(560px, 90vw);
   }
 }
+
+.transaction-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.transaction-form input {
+  width: 90px;
+  padding: 6px 10px;
+  border: 1px solid #cdb7a5;
+  border-radius: 14px;
+  font-family: Georgia, serif;
+}

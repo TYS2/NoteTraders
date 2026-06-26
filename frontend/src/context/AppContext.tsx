@@ -61,6 +61,9 @@ type AppContextValue = {
   logout: () => void;
   createListing: () => Promise<boolean>;
 
+  topUpBalance: (amount: number) => Promise<boolean>;
+  withdrawBalance: (amount: number) => Promise<boolean>;
+
   startEditParticulars: () => void;
   cancelEditParticulars: () => void;
   updateUser: () => Promise<void>;
@@ -393,6 +396,82 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function saveCurrentUser(updatedUser: User) {
+    setCurrentUser(updatedUser);
+    localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+  }
+
+  function getValidTransactionAmount(amount: number) {
+    const validAmount = Number(amount);
+
+    if (!Number.isFinite(validAmount) || validAmount <= 0) {
+      setMessage("Please enter an amount greater than $0.");
+      return null;
+    }
+
+    return Number(validAmount.toFixed(2));
+  }
+
+  async function changeBalance(
+    endpoint: "/addBalance" | "/withdrawBalance",
+    amount: number,
+    successMessage: string
+  ) {
+    setMessage("");
+
+    if (!currentUser?.accountId) {
+      setMessage("Please sign in first.");
+      return false;
+    }
+
+    const validAmount = getValidTransactionAmount(amount);
+    if (validAmount === null) return false;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: Number(currentUser.accountId),
+          amount: validAmount,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Transaction failed");
+      }
+
+      const currentBalance = Number(currentUser.balance ?? 0);
+      const nextBalance =
+        endpoint === "/addBalance"
+          ? currentBalance + validAmount
+          : currentBalance - validAmount;
+
+      saveCurrentUser({
+        ...currentUser,
+        balance: Number(nextBalance.toFixed(2)),
+      });
+
+      setMessage(successMessage);
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Transaction failed");
+      return false;
+    }
+  }
+
+  async function topUpBalance(amount: number) {
+    return changeBalance("/addBalance", amount, "Top up successful!");
+  }
+
+  async function withdrawBalance(amount: number) {
+    return changeBalance("/withdrawBalance", amount, "Withdraw successful!");
+  }
+
   function startEditParticulars() {
     if (!currentUser) return;
 
@@ -642,6 +721,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     createListing,
+
+    topUpBalance,
+    withdrawBalance,
 
     startEditParticulars,
     cancelEditParticulars,
