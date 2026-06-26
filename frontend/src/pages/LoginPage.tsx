@@ -1,25 +1,26 @@
 import type { FormEvent } from "react";
-import type { LoginForm, Page } from "../types";
+import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
-type LoginPageProps = {
-  message: string;
-  loginForm: LoginForm;
-  setLoginForm: React.Dispatch<React.SetStateAction<LoginForm>>;
-  handleLogin: (event: FormEvent) => void;
-  setPage: React.Dispatch<React.SetStateAction<Page>>;
-};
+function LoginPage() {
+  const navigate = useNavigate();
 
-function LoginPage({
-  message,
-  loginForm,
-  setLoginForm,
-  handleLogin,
-  setPage,
-}: LoginPageProps) {
+  const { message, loginForm, setLoginForm, login } = useAppContext();
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const success = await login();
+
+    if (success) {
+      navigate("/");
+    }
+  }
+
   return (
     <main className="login-page">
       <div className="login-card">
-        <h3 className="login-heading">Sign in to your NoteTrade account</h3>
+        <h3 className="login-heading">Welcome back to NoteTrade!</h3>
 
         {message && <p className="status-message">{message}</p>}
 
@@ -30,7 +31,10 @@ function LoginPage({
               type="text"
               value={loginForm.username}
               onChange={(event) =>
-                setLoginForm({ ...loginForm, username: event.target.value })
+                setLoginForm({
+                  ...loginForm,
+                  username: event.target.value,
+                })
               }
               required
             />
@@ -42,7 +46,10 @@ function LoginPage({
               type="password"
               value={loginForm.password}
               onChange={(event) =>
-                setLoginForm({ ...loginForm, password: event.target.value })
+                setLoginForm({
+                  ...loginForm,
+                  password: event.target.value,
+                })
               }
               required
             />
@@ -54,14 +61,14 @@ function LoginPage({
         </form>
 
         <p className="auth-switch-text">
-          Don&apos;t have an account?{" "}
-          <span className="auth-switch-link" onClick={() => setPage("signup")}>
+          Do not have an account?{" "}
+          <span className="auth-switch-link" onClick={() => navigate("/signup")}>
             Sign up
           </span>{" "}
           here!
         </p>
 
-        <button className="back-btn" onClick={() => setPage("home")}>
+        <button className="back-btn" onClick={() => navigate("/")}>
           Back to Home
         </button>
       </div>

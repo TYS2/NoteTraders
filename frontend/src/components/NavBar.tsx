@@ -1,64 +1,64 @@
-import type { Page } from "../types";
-import { SUBJECT_OPTIONS, ACADEMIC_LEVEL_OPTIONS, PRICE_FILTER_OPTIONS } from "../constants";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  ACADEMIC_LEVEL_OPTIONS,
+  PRICE_FILTER_OPTIONS,
+  SUBJECT_OPTIONS,
+} from "../constants";
+import { useAppContext } from "../context/AppContext";
 
-type NavbarProps = {
-  isLoggedIn: boolean;
-  page: Page;
+function NavBar() {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  setPage: React.Dispatch<React.SetStateAction<Page>>;
-  goToProtectedPage: (targetPage: Page) => void;
-  handleLogout: () => void;
+  const {
+    isLoggedIn,
+    logout,
+    searchTerm,
+    setSearchTerm,
+    academicLevelFilter,
+    setAcademicLevelFilter,
+    subjectFilter,
+    setSubjectFilter,
+    priceFilter,
+    setPriceFilter,
+    clearMessage,
+  } = useAppContext();
 
-  searchTerm: string;
-  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+  const showSearchAndFilters = location.pathname === "/";
 
-  academicLevelFilter: string;
-  setAcademicLevelFilter: React.Dispatch<React.SetStateAction<string>>;
+  function goTo(path: string) {
+    clearMessage();
+    navigate(path);
+  }
 
-  subjectFilter: string;
-  setSubjectFilter: React.Dispatch<React.SetStateAction<string>>;
+  function handleLogoutClick() {
+    logout();
+    navigate("/");
+  }
 
-  priceFilter: string;
-  setPriceFilter: React.Dispatch<React.SetStateAction<string>>;
-};
-
-function Navbar({
-  isLoggedIn,
-  page,
-  setPage,
-  goToProtectedPage,
-  handleLogout,
-  searchTerm,
-  setSearchTerm,
-  academicLevelFilter,
-  setAcademicLevelFilter,
-  subjectFilter,
-  setSubjectFilter,
-  priceFilter,
-  setPriceFilter,
-}: NavbarProps) {
   return (
     <nav className="navbar">
       <div className="nav-left">
-        <button onClick={() => setPage("home")}>Home</button>
+        <button onClick={() => goTo("/")}>Home</button>
 
         {isLoggedIn ? (
           <>
-            <button onClick={() => goToProtectedPage("account")}>Account</button>
-            <button onClick={() => goToProtectedPage("createListing")}>
-              Sell Notes
-            </button>
-            <button onClick={handleLogout}>Log Out</button>
+            <button onClick={() => goTo("/account")}>Account</button>
+
+            <button onClick={() => goTo("/sell")}>Sell Notes</button>
+
+            <button onClick={handleLogoutClick}>Log Out</button>
           </>
         ) : (
           <>
-            <button onClick={() => setPage("signup")}>Sign Up</button>
-            <button onClick={() => setPage("login")}>Sign In</button>
+            <button onClick={() => goTo("/signup")}>Sign Up</button>
+
+            <button onClick={() => goTo("/login")}>Sign In</button>
           </>
         )}
       </div>
 
-      {page === "home" && (
+      {showSearchAndFilters && (
         <div className="nav-right">
           <select
             value={academicLevelFilter}
@@ -106,6 +106,7 @@ function Navbar({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
+
             <button type="button">⌕</button>
           </div>
         </div>
@@ -114,4 +115,4 @@ function Navbar({
   );
 }
 
-export default Navbar;
+export default NavBar;

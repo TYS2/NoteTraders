@@ -1,20 +1,34 @@
+import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 import type { Listing } from "../types";
 
-type HomePageProps = {
-  message: string;
-  isLoadingListings: boolean;
-  filteredListings: Listing[];
-  handleViewListing: (listing: Listing) => void;
-  hasActiveFilters: boolean;
-};
+function HomePage() {
+  const navigate = useNavigate();
 
-function HomePage({
-  message,
-  isLoadingListings,
-  filteredListings,
-  handleViewListing,
-  hasActiveFilters,
-}: HomePageProps) {
+  const {
+    message,
+    isLoggedIn,
+    setMessage,
+    isLoadingListings,
+    filteredListings,
+    hasActiveFilters,
+  } = useAppContext();
+
+  function handleViewListing(listing: Listing) {
+    if (!listing.id) {
+      setMessage("This listing is missing an ID, so it cannot be opened.");
+      return;
+    }
+
+    if (!isLoggedIn) {
+      setMessage("Please sign in first.");
+      navigate("/login");
+      return;
+    }
+
+    navigate(`/listings/${listing.id}`);
+  }
+
   return (
     <main className="homepage">
       {message && <p className="status-message homepage-message">{message}</p>}

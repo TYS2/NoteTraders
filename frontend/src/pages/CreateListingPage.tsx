@@ -1,23 +1,27 @@
 import type { FormEvent } from "react";
-import type { ListingForm } from "../types";
-import { SUBJECT_OPTIONS, ACADEMIC_LEVEL_OPTIONS } from "../constants";
+import { useNavigate } from "react-router-dom";
+import { ACADEMIC_LEVEL_OPTIONS, SUBJECT_OPTIONS } from "../constants";
+import { useAppContext } from "../context/AppContext";
 
-type CreateListingPageProps = {
-  message: string;
-  listingForm: ListingForm;
-  setListingForm: React.Dispatch<React.SetStateAction<ListingForm>>;
-  handleCreateListing: (event: FormEvent) => void;
-};
+function CreateListingPage() {
+  const navigate = useNavigate();
 
-function CreateListingPage({
-  message,
-  listingForm,
-  setListingForm,
-  handleCreateListing,
-}: CreateListingPageProps) {
+  const { message, listingForm, setListingForm, createListing } =
+    useAppContext();
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const success = await createListing();
+
+    if (success) {
+      navigate("/");
+    }
+  }
+
   return (
     <main className="simple-page">
-      <form className="simple-card listing-form" onSubmit={handleCreateListing}>
+      <form className="simple-card listing-form" onSubmit={handleSubmit}>
         <h2>Create a Listing</h2>
 
         {message && <p className="status-message">{message}</p>}

@@ -29,6 +29,7 @@ body {
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .logo {
@@ -61,15 +62,20 @@ body {
   gap: 22px;
 }
 
-.nav-left button {
+.nav-left button,
+.nav-left a {
   border: none;
   background: none;
   color: black;
   font-size: 16px;
   cursor: pointer;
+  text-decoration: none;
+  font-family: Arial, sans-serif;
 }
 
-.nav-left button:hover {
+.nav-left button:hover,
+.nav-left a:hover,
+.nav-left a.active {
   text-decoration: underline;
 }
 
@@ -122,7 +128,7 @@ select {
   font-weight: bold;
 }
 
-/* Login page */
+/* Login and signup page */
 .login-page {
   display: flex;
   justify-content: center;
@@ -147,7 +153,7 @@ select {
 
 .login-heading {
   margin-top: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 28px;
 }
 
 .form-row {
@@ -294,7 +300,7 @@ select {
   color: #5f443d;
 }
 
-/* Account and create listing pages */
+/* Create listing page */
 .simple-page {
   display: flex;
   justify-content: center;
@@ -353,41 +359,6 @@ select {
 .simple-card .main-btn {
   align-self: center;
   margin-top: 12px;
-}
-
-/* Mobile responsiveness */
-@media (max-width: 850px) {
-  .navbar {
-    height: auto;
-    padding: 14px 20px;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .nav-left,
-  .nav-right {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    margin-bottom: 14px;
-  }
-
-  .form-row label,
-  .form-row input,
-  .optional-text {
-    grid-column: 1;
-    width: 100%;
-    text-align: left;
-  }
-
-  .login-card {
-    width: min(560px, 90vw);
-  }
 }
 
 /* Account page layout */
@@ -578,30 +549,13 @@ select {
   resize: vertical;
 }
 
-@media (max-width: 900px) {
-  .account-page {
-    grid-template-columns: 1fr;
-    gap: 35px;
-    padding: 20px;
-  }
-
-  .account-details-card {
-    flex-direction: column;
-  }
-
-  .account-actions,
-  .listing-card-actions {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-}
-
 .home-listing-actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
 }
 
+/* Listing detail page */
 .listing-detail-page {
   min-height: calc(100vh - 130px);
   background-color: #d8c8b8;
@@ -674,20 +628,7 @@ select {
   font-family: Georgia, serif;
 }
 
-@media (max-width: 900px) {
-  .listing-detail-page {
-    padding: 30px 20px;
-  }
-
-  .listing-detail-card {
-  width: 100%;
-}
-
-  .listing-detail-actions {
-    justify-content: flex-start;
-  }
-}
-
+/* Edit particulars */
 .edit-particulars-form {
   display: flex;
   flex-direction: column;
@@ -716,6 +657,7 @@ select {
   margin-top: 5px;
 }
 
+/* Password helper */
 .password-input-group {
   display: flex;
   flex-direction: column;
@@ -736,18 +678,7 @@ select {
   text-align: left;
 }
 
-.logo-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo {
-  width: 65px;
-  height: 65px;
-  object-fit: contain;
-}
-
+/* Auth switch text */
 .auth-switch-text {
   margin-top: 18px;
   text-align: center;
@@ -766,6 +697,7 @@ select {
   color: #5f3b26;
 }
 
+/* Delete confirmation */
 .delete-confirm-actions {
   display: flex;
   gap: 10px;
@@ -796,4 +728,69 @@ select {
 
 .cancel-delete-btn:hover {
   background-color: #c8b49f;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 900px) {
+  .account-page {
+    grid-template-columns: 1fr;
+    gap: 35px;
+    padding: 20px;
+  }
+
+  .account-details-card {
+    flex-direction: column;
+  }
+
+  .account-actions,
+  .listing-card-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .listing-detail-page {
+    padding: 30px 20px;
+  }
+
+  .listing-detail-card {
+    width: 100%;
+  }
+
+  .listing-detail-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 850px) {
+  .navbar {
+    height: auto;
+    padding: 14px 20px;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .nav-left,
+  .nav-right {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .form-row label,
+  .form-row input,
+  .optional-text {
+    grid-column: 1;
+    width: 100%;
+    text-align: left;
+  }
+
+  .login-card {
+    width: min(560px, 90vw);
+  }
 }

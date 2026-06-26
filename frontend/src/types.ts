@@ -1,15 +1,8 @@
-export type Page =
-  | "home"
-  | "login"
-  | "signup"
-  | "account"
-  | "createListing"
-  | "listing";
-  
 export type User = {
-  id?: string;
-  accountId?: number;
+  id?: string | number;
+  accountId?: string | number;
   username: string;
+  password?: string;
   email: string;
   phoneNumber?: string;
   balance?: number;
@@ -17,19 +10,11 @@ export type User = {
 };
 
 export type Listing = {
-  id?: string;
+  id?: string | number;
   title: string;
   description: string;
   price: number;
   seller: string;
-  academicLevel: string;
-  subject: string;
-};
-
-export type ListingForm = {
-  title: string;
-  description: string;
-  price: string;
   academicLevel: string;
   subject: string;
 };
@@ -45,6 +30,14 @@ export type SignupForm = {
 export type LoginForm = {
   username: string;
   password: string;
+};
+
+export type ListingForm = {
+  title: string;
+  description: string;
+  price: string;
+  academicLevel: string;
+  subject: string;
 };
 
 export type EditUserForm = {

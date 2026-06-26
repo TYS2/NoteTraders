@@ -1,21 +1,22 @@
 import type { FormEvent } from "react";
-import type { Page, SignupForm } from "../types";
+import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
-type SignUpPageProps = {
-  message: string;
-  signupForm: SignupForm;
-  setSignupForm: React.Dispatch<React.SetStateAction<SignupForm>>;
-  handleSignup: (event: FormEvent) => void;
-  setPage: React.Dispatch<React.SetStateAction<Page>>;
-};
+function SignUpPage() {
+  const navigate = useNavigate();
 
-function SignUpPage({
-  message,
-  signupForm,
-  setSignupForm,
-  handleSignup,
-  setPage,
-}: SignUpPageProps) {
+  const { message, signupForm, setSignupForm, signup } = useAppContext();
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const success = await signup();
+
+    if (success) {
+      navigate("/");
+    }
+  }
+
   return (
     <main className="login-page">
       <div className="login-card">
@@ -25,7 +26,7 @@ function SignUpPage({
 
         {message && <p className="status-message">{message}</p>}
 
-        <form onSubmit={handleSignup}>
+        <form onSubmit={handleSubmit}>
           <div className="form-row">
             <label>Username:</label>
             <input
@@ -100,15 +101,15 @@ function SignUpPage({
         </form>
 
         <p className="auth-switch-text">
-        Already have an account?{" "}
-        <span className="auth-switch-link" onClick={() => setPage("login")}>
-            Sign in 
-        </span>{" "}
-        here!
+          Already have an account?{" "}
+          <span className="auth-switch-link" onClick={() => navigate("/login")}>
+            Sign in
+          </span>{" "}
+          here!
         </p>
 
-        <button className="back-btn" onClick={() => setPage("home")}>
-        Back to Home
+        <button className="back-btn" onClick={() => navigate("/")}>
+          Back to Home
         </button>
       </div>
     </main>

@@ -1,17 +1,13 @@
-import type { Page } from "../types";
+import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-type HeaderProps = {
-  setPage: React.Dispatch<React.SetStateAction<Page>>;
-};
-
-function Header({ setPage }: HeaderProps) {
+function Header() {
   return (
     <header className="top-header">
-      <div className="logo-section" onClick={() => setPage("home")}>
+      <Link to="/" className="logo-section">
         <img src={logo} alt="NoteTraders Logo" className="logo" />
         <h1>NoteTrade</h1>
-      </div>
+      </Link>
     </header>
   );
 }

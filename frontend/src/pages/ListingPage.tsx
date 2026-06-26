@@ -1,17 +1,28 @@
-import type { Listing, Page } from "../types";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
-type ListingPageProps = {
-  selectedListing: Listing | null;
-  setPage: React.Dispatch<React.SetStateAction<Page>>;
-};
+function ListingPage() {
+  const navigate = useNavigate();
+  const { listingId } = useParams();
 
-function ListingPage({ selectedListing, setPage }: ListingPageProps) {
+  const { getListingById, isLoadingListings } = useAppContext();
+
+  const selectedListing = getListingById(listingId);
+
+  if (isLoadingListings) {
+    return (
+      <main className="listing-detail-page">
+        <p>Loading listing...</p>
+      </main>
+    );
+  }
+
   if (!selectedListing) {
     return (
       <main className="listing-detail-page">
-        <p>No listing selected.</p>
+        <p>No listing selected or this listing no longer exists.</p>
 
-        <button className="back-to-home-btn" onClick={() => setPage("home")}>
+        <button className="back-to-home-btn" onClick={() => navigate("/")}>
           Back to Home
         </button>
       </main>
@@ -32,9 +43,7 @@ function ListingPage({ selectedListing, setPage }: ListingPageProps) {
             {selectedListing.academicLevel} • {selectedListing.subject}
           </p>
 
-          <p className="listing-detail-meta">
-            Seller: {selectedListing.seller}
-          </p>
+          <p className="listing-detail-meta">Seller: {selectedListing.seller}</p>
 
           <p className="listing-detail-price">
             {selectedListing.price === 0
@@ -49,7 +58,7 @@ function ListingPage({ selectedListing, setPage }: ListingPageProps) {
         </div>
       </section>
 
-      <button className="back-to-home-btn" onClick={() => setPage("home")}>
+      <button className="back-to-home-btn" onClick={() => navigate("/")}>
         Back to Home
       </button>
     </main>

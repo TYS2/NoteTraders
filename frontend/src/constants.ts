@@ -8,31 +8,23 @@ export const emptyListingForm: ListingForm = {
   subject: "",
 };
 
-export const SUBJECT_OPTIONS = [
-  "English",
-  "Mathematics",
-  "Science",
-  "Chinese",
-  "Malay",
-  "Tamil",
-  "History",
-  "Geography",
-  "Literature",
-  "Economics",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "Computing",
-  "Others",
-];
-
 export const ACADEMIC_LEVEL_OPTIONS = [
   "Primary",
   "Secondary",
-  "JC",
+  "Junior College",
   "Polytechnic",
   "University",
-  "Others",
+];
+
+export const SUBJECT_OPTIONS = [
+  "English",
+  "Math",
+  "Science",
+  "Chinese",
+  "Computing",
+  "Economics",
+  "History",
+  "Geography",
 ];
 
 export const PRICE_FILTER_OPTIONS = [

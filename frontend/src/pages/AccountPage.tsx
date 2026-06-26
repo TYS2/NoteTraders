@@ -1,54 +1,33 @@
-import type { EditUserForm, Listing, ListingForm, Page, User } from "../types";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ACADEMIC_LEVEL_OPTIONS, SUBJECT_OPTIONS } from "../constants";
+import { useAppContext } from "../context/AppContext";
 
-type AccountPageProps = {
-  message: string;
-  currentUser: User | null;
-  isEditingParticulars: boolean;
-  editUserForm: EditUserForm;
-  setEditUserForm: React.Dispatch<React.SetStateAction<EditUserForm>>;
-  startEditParticulars: () => void;
-  cancelEditParticulars: () => void;
-  handleUpdateUser: () => void;
-  profilePicture: string | null;
-  handleProfilePictureUpload: (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => void;
-  myListings: Listing[];
-  setPage: React.Dispatch<React.SetStateAction<Page>>;
-  editingListingId: string | null;
-  editListingForm: ListingForm;
-  setEditListingForm: React.Dispatch<React.SetStateAction<ListingForm>>;
-  startEditListing: (listing: Listing) => void;
-  cancelEditListing: () => void;
-  handleUpdateListing: (listingId: string) => void;
-  handleDeleteListing: (listingId: string) => void;
-  handleViewListing: (listing: Listing) => void;
-};
-
-function AccountPage({
-  message,
-  currentUser,
-  isEditingParticulars,
-  editUserForm,
-  setEditUserForm,
-  startEditParticulars,
-  cancelEditParticulars,
-  handleUpdateUser,
-  profilePicture,
-  handleProfilePictureUpload,
-  myListings,
-  setPage,
-  editingListingId,
-  editListingForm,
-  setEditListingForm,
-  startEditListing,
-  cancelEditListing,
-  handleUpdateListing,
-  handleDeleteListing,
-  handleViewListing,
-}: AccountPageProps) {
+function AccountPage() {
+  const navigate = useNavigate();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const {
+    message,
+    currentUser,
+    isEditingParticulars,
+    editUserForm,
+    setEditUserForm,
+    startEditParticulars,
+    cancelEditParticulars,
+    updateUser,
+    profilePicture,
+    handleProfilePictureUpload,
+    myListings,
+    editingListingId,
+    editListingForm,
+    setEditListingForm,
+    startEditListing,
+    cancelEditListing,
+    updateListing,
+    deleteListing,
+  } = useAppContext();
+
   return (
     <main className="account-page">
       {message && <p className="status-message account-message">{message}</p>}
@@ -105,7 +84,7 @@ function AccountPage({
                 </label>
 
                 <div className="edit-particulars-actions">
-                  <button className="small-green-btn" onClick={handleUpdateUser}>
+                  <button className="small-green-btn" onClick={updateUser}>
                     Save
                   </button>
 
@@ -172,10 +151,7 @@ function AccountPage({
         <div className="listings-header">
           <h2 className="section-title">My listings</h2>
 
-          <button
-            className="small-green-btn"
-            onClick={() => setPage("createListing")}
-          >
+          <button className="small-green-btn" onClick={() => navigate("/sell")}>
             Add
           </button>
         </div>
@@ -187,162 +163,171 @@ function AccountPage({
             </div>
           )}
 
-          {myListings.map((listing) => (
-            <div className="my-listing-card" key={listing.id || listing.title}>
-              {editingListingId === listing.id ? (
-                <div className="edit-listing-form">
-                  <input
-                    type="text"
-                    value={editListingForm.title}
-                    onChange={(event) =>
-                      setEditListingForm({
-                        ...editListingForm,
-                        title: event.target.value,
-                      })
-                    }
-                  />
+          {myListings.map((listing) => {
+            const listingKey = String(listing.id || listing.title);
+            const isEditingThisListing = editingListingId === String(listing.id);
 
-                  <textarea
-                    value={editListingForm.description}
-                    onChange={(event) =>
-                      setEditListingForm({
-                        ...editListingForm,
-                        description: event.target.value,
-                      })
-                    }
-                  />
+            return (
+              <div className="my-listing-card" key={listingKey}>
+                {isEditingThisListing ? (
+                  <div className="edit-listing-form">
+                    <input
+                      type="text"
+                      value={editListingForm.title}
+                      onChange={(event) =>
+                        setEditListingForm({
+                          ...editListingForm,
+                          title: event.target.value,
+                        })
+                      }
+                    />
 
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editListingForm.price}
-                    onChange={(event) =>
-                      setEditListingForm({
-                        ...editListingForm,
-                        price: event.target.value,
-                      })
-                    }
-                  />
+                    <textarea
+                      value={editListingForm.description}
+                      onChange={(event) =>
+                        setEditListingForm({
+                          ...editListingForm,
+                          description: event.target.value,
+                        })
+                      }
+                    />
 
-                  <select
-                    value={editListingForm.academicLevel}
-                    onChange={(event) =>
-                      setEditListingForm({
-                        ...editListingForm,
-                        academicLevel: event.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Choose level</option>
-                    <option>Primary</option>
-                    <option>Secondary</option>
-                    <option>JC</option>
-                    <option>University</option>
-                  </select>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editListingForm.price}
+                      onChange={(event) =>
+                        setEditListingForm({
+                          ...editListingForm,
+                          price: event.target.value,
+                        })
+                      }
+                    />
 
-                  <select
-                    value={editListingForm.subject}
-                    onChange={(event) =>
-                      setEditListingForm({
-                        ...editListingForm,
-                        subject: event.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Choose subject</option>
-                    <option>Math</option>
-                    <option>Science</option>
-                    <option>Computing</option>
-                    <option>Chemistry</option>
-                  </select>
-
-                  <div className="listing-card-actions">
-                    <button
-                      className="small-green-btn"
-                      onClick={() =>
-                        listing.id && handleUpdateListing(listing.id)
+                    <select
+                      value={editListingForm.academicLevel}
+                      onChange={(event) =>
+                        setEditListingForm({
+                          ...editListingForm,
+                          academicLevel: event.target.value,
+                        })
                       }
                     >
-                      Save
-                    </button>
+                      <option value="">Choose level</option>
 
-                    <button
-                      className="small-green-btn"
-                      onClick={cancelEditListing}
+                      {ACADEMIC_LEVEL_OPTIONS.map((level) => (
+                        <option key={level} value={level}>
+                          {level}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={editListingForm.subject}
+                      onChange={(event) =>
+                        setEditListingForm({
+                          ...editListingForm,
+                          subject: event.target.value,
+                        })
+                      }
                     >
-                      Cancel
-                    </button>
+                      <option value="">Choose subject</option>
+
+                      {SUBJECT_OPTIONS.map((subject) => (
+                        <option key={subject} value={subject}>
+                          {subject}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="listing-card-actions">
+                      <button
+                        className="small-green-btn"
+                        onClick={() => listing.id && updateListing(listing.id)}
+                      >
+                        Save
+                      </button>
+
+                      <button
+                        className="small-green-btn"
+                        onClick={cancelEditListing}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <>
-                  <h3>{listing.title}</h3>
-                  <p>{listing.description}</p>
+                ) : (
+                  <>
+                    <h3>{listing.title}</h3>
+                    <p>{listing.description}</p>
 
-                  <p className="listing-small-text">
-                    {listing.academicLevel} • {listing.subject}
-                  </p>
+                    <p className="listing-small-text">
+                      {listing.academicLevel} • {listing.subject}
+                    </p>
 
-                  <p className="listing-small-text">
-                    {listing.price === 0
-                      ? "Free"
-                      : `$${listing.price.toFixed(2)}`}
-                  </p>
+                    <p className="listing-small-text">
+                      {listing.price === 0
+                        ? "Free"
+                        : `$${listing.price.toFixed(2)}`}
+                    </p>
 
-                  <div className="listing-card-actions">
-                    <button
-                      className="small-green-btn"
-                      onClick={() => startEditListing(listing)}
-                    >
-                      Edit
-                    </button>
+                    <div className="listing-card-actions">
+                      <button
+                        className="small-green-btn"
+                        onClick={() => startEditListing(listing)}
+                      >
+                        Edit
+                      </button>
 
-                    <button
-                      className="small-green-btn"
-                      onClick={() => handleViewListing(listing)}
-                    >
-                      View
-                    </button>
+                      <button
+                        className="small-green-btn"
+                        onClick={() =>
+                          listing.id && navigate(`/listings/${listing.id}`)
+                        }
+                      >
+                        View
+                      </button>
 
-                    {confirmDeleteId === listing.id ? (
-                      <div className="delete-confirm-actions">
+                      {confirmDeleteId === String(listing.id) ? (
+                        <div className="delete-confirm-actions">
+                          <button
+                            className="confirm-delete-btn"
+                            onClick={() => {
+                              if (!listing.id) return;
+
+                              deleteListing(listing.id);
+                              setConfirmDeleteId(null);
+                            }}
+                          >
+                            Confirm
+                          </button>
+
+                          <button
+                            className="cancel-delete-btn"
+                            onClick={() => setConfirmDeleteId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
                         <button
-                          className="confirm-delete-btn"
+                          className="small-green-btn"
                           onClick={() => {
                             if (!listing.id) return;
 
-                            handleDeleteListing(listing.id);
-                            setConfirmDeleteId(null);
+                            setConfirmDeleteId(String(listing.id));
                           }}
                         >
-                          Confirm
+                          Delete
                         </button>
-
-                        <button
-                          className="cancel-delete-btn"
-                          onClick={() => setConfirmDeleteId(null)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className="small-green-btn"
-                        onClick={() => {
-                          if (!listing.id) return;
-
-                          setConfirmDeleteId(listing.id);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
     </main>
