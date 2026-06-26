@@ -63,3 +63,8 @@ type Level struct {
 	Name    string `json:"name"`
 }
 
+type Purchase struct {
+	BuyerID int `json:"buyerID`
+	SellerID int `json:"sellerID`
+	ListingID int `json:"listingID`
+}
