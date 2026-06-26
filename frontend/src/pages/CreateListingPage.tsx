@@ -91,6 +91,23 @@ function CreateListingPage() {
           ))}
         </select>
 
+        <label>Photo of Notes</label>
+        <input
+          type="file"
+          accept="image/*"
+          required
+          onChange={(event) =>
+            setListingForm({
+              ...listingForm,
+              photoFile: event.target.files?.[0] ?? null,
+            })
+          }
+        />
+
+        {listingForm.photoFile && (
+          <p className="file-helper">Selected: {listingForm.photoFile.name}</p>
+        )} 
+
         <button className="main-btn" type="submit">
           Post Listing
         </button>

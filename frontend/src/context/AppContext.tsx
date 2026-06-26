@@ -364,6 +364,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    if (!listingForm.photoFile) {
+      setMessage("Please upload a photo of your notes.");
+      return false;
+    }
+
+    if (!listingForm.photoFile.type.startsWith("image/")) {
+      setMessage("Please upload an image file.");
+      return false;
+    }
+
     try {
       const response = await fetch("/createListing", {
         method: "POST",
@@ -384,6 +394,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to create listing");
+      }
+
+      const createdListingId = data.id;
+
+      const form = new FormData();
+      form.append("listing_picture", listingForm.photoFile);
+
+      const uploadResponse = await fetch(
+        `/listings/${createdListingId}/listing-picture`,
+        {
+          method: "PATCH",
+          body: form,
+        }
+      );
+
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || "Photo upload failed");
       }
 
       setMessage("Listing created successfully!");
@@ -596,6 +625,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       price: String(listing.price),
       academicLevel: listing.academicLevel,
       subject: listing.subject,
+      photoFile: null,
     });
   }
 
@@ -606,6 +636,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function updateListing(listingId: string | number) {
     if (!currentUser) return;
+
+    setMessage("");
+
+    if (
+      editListingForm.photoFile &&
+      !editListingForm.photoFile.type.startsWith("image/")
+    ) {
+      setMessage("Please upload an image file.");
+      return;
+    }
+
+    if (
+      editListingForm.photoFile &&
+      editListingForm.photoFile.size > 5 * 1024 * 1024
+    ) {
+      setMessage("Photo must be 5MB or smaller.");
+      return;
+    }
 
     try {
       const response = await fetch("/updateListing", {
@@ -628,6 +676,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to update listing");
+      }
+
+      if (editListingForm.photoFile) {
+        const form = new FormData();
+        form.append("listing_picture", editListingForm.photoFile);
+
+        const uploadResponse = await fetch(
+          `/listings/${listingId}/listing-picture`,
+          {
+            method: "PATCH",
+            body: form,
+          }
+        );
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || "Listing updated, but photo upload failed");
+        }
       }
 
       setMessage("Listing updated successfully!");

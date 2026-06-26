@@ -143,7 +143,7 @@ func GetListings(c *gin.Context) {
 	stringMaxPrice = c.Query("max_price")
 
 	query :=
-		`SELECT id, title, description, price, seller_id, level_id, subject_id FROM listings WHERE 1=1`
+		`SELECT id, title, description, price, seller_id, level_id, subject_id, COALESCE(photo_url, '') FROM listings WHERE 1=1`
 	var args []interface{}
 	argNum := 1
 
@@ -212,6 +212,7 @@ func GetListings(c *gin.Context) {
 			&sellerID,
 			&levelID,
 			&subjectID,
+			&listing.PhotoUrl,
 		); err != nil {
 			log.Println("Error scanning listing:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode listings"})

@@ -6,6 +6,7 @@ export const emptyListingForm: ListingForm = {
   price: "",
   academicLevel: "",
   subject: "",
+  photoFile: null,
 };
 
 export const ACADEMIC_LEVEL_OPTIONS = [

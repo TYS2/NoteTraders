@@ -31,30 +31,42 @@ function ListingPage() {
 
   return (
     <main className="listing-detail-page">
-      <section className="listing-detail-card no-image-listing-card">
-        <div className="listing-detail-info">
-          <h2>{selectedListing.title}</h2>
+      <section className="listing-detail-card">
+        <div className="listing-detail-content">
+          <div className="listing-detail-info">
+            <h2>{selectedListing.title}</h2>
 
-          <p className="listing-detail-description">
-            {selectedListing.description}
-          </p>
+            <p className="listing-detail-description">
+              {selectedListing.description}
+            </p>
 
-          <p className="listing-detail-meta">
-            {selectedListing.academicLevel} • {selectedListing.subject}
-          </p>
+            <p className="listing-detail-meta">
+              {selectedListing.academicLevel} • {selectedListing.subject}
+            </p>
 
-          <p className="listing-detail-meta">Seller: {selectedListing.seller}</p>
+            <p className="listing-detail-meta">Seller: {selectedListing.seller}</p>
 
-          <p className="listing-detail-price">
-            {selectedListing.price === 0
-              ? "Free"
-              : `$${selectedListing.price.toFixed(2)}`}
-          </p>
-
-          <div className="listing-detail-actions">
-            <button className="small-green-btn">Buy</button>
-            <button className="small-green-btn">Chat with seller</button>
+            <p className="listing-detail-price">
+              {selectedListing.price === 0
+                ? "Free"
+                : `$${selectedListing.price.toFixed(2)}`}
+            </p>
           </div>
+
+          {selectedListing.photoUrl && (
+            <div className="listing-detail-image-wrapper">
+              <img
+                className="listing-detail-image"
+                src={selectedListing.photoUrl}
+                alt={selectedListing.title}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="listing-detail-actions">
+          <button className="small-green-btn">Buy</button>
+          <button className="small-green-btn">Chat with seller</button>
         </div>
       </section>
 

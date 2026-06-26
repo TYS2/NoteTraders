@@ -295,6 +295,29 @@ function AccountPage() {
                       ))}
                     </select>
 
+                    {listing.photoUrl && (
+                      <div className="edit-listing-current-image">
+                        <p>Current photo:</p>
+                        <img src={listing.photoUrl} alt={listing.title} />
+                      </div>
+                    )}
+
+                    <label>Change Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) =>
+                        setEditListingForm({
+                          ...editListingForm,
+                          photoFile: event.target.files?.[0] ?? null,
+                        })
+                      }
+                    />
+
+                    {editListingForm.photoFile && (
+                      <p className="file-helper">Selected: {editListingForm.photoFile.name}</p>
+                    )}
+
                     <div className="listing-card-actions">
                       <button
                         className="small-green-btn"

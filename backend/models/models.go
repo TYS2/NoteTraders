@@ -39,12 +39,13 @@ type CreateListing struct {
 
 type Listing struct {
 	ListingID     int     `json:"id" binding:"required"`
-	Title         string  `json:"title" `
+	Title         string  `json:"title"`
 	Description   string  `json:"description"`
-	Price         float64 `json:"price" `
+	Price         float64 `json:"price"`
 	Seller        string  `json:"seller"`
-	AcademicLevel string  `json:"academicLevel" `
-	Subject       string  `json:"subject" `
+	AcademicLevel string  `json:"academicLevel"`
+	Subject       string  `json:"subject"`
+	PhotoUrl      string  `json:"photoUrl"`
 }
 
 type DeleteListing struct {

@@ -17,6 +17,16 @@ export type Listing = {
   seller: string;
   academicLevel: string;
   subject: string;
+  photoUrl?: string;
+};
+
+export type ListingForm = {
+  title: string;
+  description: string;
+  price: string;
+  academicLevel: string;
+  subject: string;
+  photoFile: File | null;
 };
 
 export type SignupForm = {
@@ -30,14 +40,6 @@ export type SignupForm = {
 export type LoginForm = {
   username: string;
   password: string;
-};
-
-export type ListingForm = {
-  title: string;
-  description: string;
-  price: string;
-  academicLevel: string;
-  subject: string;
 };
 
 export type EditUserForm = {
