@@ -57,3 +57,11 @@ export type TransactionItem = {
   sellerUsername: string;
   purchasedAt?: string;
 };
+
+export type TransactionHistoryEntry = {
+  id?: string | number;
+  transactionType: "Purchased" | "Sold" | "Top Up" | "Withdraw";
+  title: string;
+  amount: number;
+  createdAt: string;
+};

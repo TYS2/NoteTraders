@@ -6,6 +6,8 @@ function ListingPage() {
   const { listingId } = useParams();
 
   const {
+    message,
+    clearMessage,
     getListingById,
     isLoadingListings,
     purchaseListing,
@@ -47,6 +49,8 @@ function ListingPage() {
 
   return (
     <main className="listing-detail-page">
+      {message && <p className="status-message listing-detail-message">{message}</p>}
+      
       <section className="listing-detail-card">
         <div className="listing-detail-content">
           <div className="listing-detail-info">

@@ -189,9 +189,7 @@ function AccountPage() {
 
               <button
                 className="small-green-btn"
-                onClick={() =>
-                  setMessage("Transaction history is not implemented yet.")
-                }
+                onClick={() => navigate("/transaction-history")}
               >
                 View Transaction History
               </button>

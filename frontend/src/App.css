@@ -917,3 +917,57 @@ select {
   border-radius: 12px;
   background-color: white;
 }
+
+.transaction-history-page {
+  min-height: calc(100vh - 104px);
+  background-color: #d8c8b8;
+  color: #8a6257;
+  font-family: Georgia, serif;
+  padding: 18px 20px 60px;
+}
+
+.transaction-history-container {
+  width: min(460px, 90vw);
+  margin: 0 auto;
+}
+
+.transaction-history-title {
+  text-align: center;
+  font-size: 22px;
+  margin-bottom: 18px;
+  color: #8a6257;
+}
+
+.transaction-date-group {
+  margin-bottom: 18px;
+}
+
+.transaction-date {
+  font-size: 20px;
+  margin: 14px 0 8px;
+  color: #8a6257;
+}
+
+.transaction-history-card {
+  background-color: #f5f0df;
+  border-radius: 28px;
+  padding: 18px 24px;
+  margin-bottom: 16px;
+  color: #8a6257;
+}
+
+.transaction-history-label {
+  font-size: 19px;
+  margin-bottom: 26px;
+}
+
+.transaction-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+}
+
+.transaction-history-amount {
+  font-weight: bold;
+}
