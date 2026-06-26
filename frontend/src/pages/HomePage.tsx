@@ -5,6 +5,7 @@ type HomePageProps = {
   isLoadingListings: boolean;
   filteredListings: Listing[];
   handleViewListing: (listing: Listing) => void;
+  hasActiveFilters: boolean;
 };
 
 function HomePage({
@@ -12,6 +13,7 @@ function HomePage({
   isLoadingListings,
   filteredListings,
   handleViewListing,
+  hasActiveFilters,
 }: HomePageProps) {
   return (
     <main className="homepage">
@@ -24,8 +26,17 @@ function HomePage({
 
         {!isLoadingListings && filteredListings.length === 0 && (
           <div className="empty-state">
-            <h3>No listings yet</h3>
-            <p>Log in and create the first one!</p>
+            {hasActiveFilters ? (
+              <>
+                <h3>No available notes</h3>
+                <p>Try changing your search or filter options.</p>
+              </>
+            ) : (
+              <>
+                <h3>No listings yet</h3>
+                <p>Log in and create the first one!</p>
+              </>
+            )}
           </div>
         )}
 

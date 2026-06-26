@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import AccountPage from "./pages/AccountPage";
 import CreateListingPage from "./pages/CreateListingPage";
 import ListingPage from "./pages/ListingPage";
+import SignUpPage from "./pages/SignUpPage";
 
 
 function App() {
@@ -54,6 +55,17 @@ function App() {
     phoneNumber: "",
   });
 
+  useEffect(() => {
+    const savedUser = localStorage.getItem("currentUser");
+
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      setCurrentUser(parsedUser);
+      setIsLoggedIn(true);
+      setProfilePicture(parsedUser.profilePictureUrl || null);
+    }
+  }, []);
+
   async function fetchListings() {
     setIsLoadingListings(true);
 
@@ -96,11 +108,13 @@ function App() {
   }
 
   function handleLogout() {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setPage("home");
-    setMessage("Logged out successfully.");
-  }
+  setIsLoggedIn(false);
+  setCurrentUser(null);
+  localStorage.removeItem("currentUser");
+
+  setPage("home");
+  setMessage("Logged out successfully.");
+}
 
   async function handleSignup(event: React.FormEvent) {
     event.preventDefault();
@@ -148,27 +162,20 @@ function App() {
         throw new Error(data.error || "Signup failed");
       }
 
-      if (ProfilePictureFile){
-        const form=new FormData();
-        form.append("profile_picture", ProfilePictureFile)
-        const pfpResponse = await fetch("/users/profile-picture",{
-          method:"POST",
-          body: form,
-        })
-
-        const pfpData = await response.json()
-        if (!pfpResponse.ok){
-          throw new Error(pfpData.error || "Profile picture upload failed")
-        }
-      }
-
-
-      setMessage("Signup successful! You can now log in.");
-
-      setLoginForm({
+      const newUser = {
         username: signupForm.username,
-        password: "",
-      });
+        email: signupForm.email,
+        phoneNumber: signupForm.phoneNumber,
+        accountId: data.user,
+        balance: 0,
+      };
+
+      setCurrentUser(newUser);
+      setIsLoggedIn(true);
+      localStorage.setItem("currentUser", JSON.stringify(newUser));
+
+      setPage("home");
+      setMessage(`Welcome to NoteTrade, ${signupForm.username}!`);
 
       setSignupForm({
         username: "",
@@ -177,6 +184,12 @@ function App() {
         email: "",
         phoneNumber: "",
       });
+
+      setLoginForm({
+        username: "",
+        password: "",
+      });
+
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Signup failed");
     }
@@ -220,10 +233,19 @@ function App() {
         throw new Error(data.error || "Login failed");
       }
 
-      setCurrentUser(data.user);
+      const loggedInUser = {
+        ...data.user,
+        accountId: data.user.id,
+        profilePictureUrl: data.user.profilePictureUrl,
+      };
+
+      setCurrentUser(loggedInUser);
+      setProfilePicture(data.user.profilePictureUrl || null);
       setIsLoggedIn(true);
+      localStorage.setItem("currentUser", JSON.stringify(loggedInUser));
+
       setPage("home");
-      setMessage(`Welcome back, ${data.user.username}!`);
+      setMessage(`Welcome back, ${loggedInUser.username}!`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Login failed");
     }
@@ -306,7 +328,7 @@ function App() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          accountId: currentUser.accountId,
+          id: currentUser.accountId,
           username: editUserForm.username,
           email: editUserForm.email,
           phoneNumber: editUserForm.phoneNumber,
@@ -321,7 +343,14 @@ function App() {
         );
       }
 
-      setCurrentUser(data.user);
+      const updatedUser = {
+        ...data.user,
+        accountId: data.user.id,
+      };
+
+      setCurrentUser(updatedUser);
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+
       setIsEditingParticulars(false);
       setMessage("Particulars updated successfully!");
     } catch (error) {
@@ -368,14 +397,49 @@ function App() {
     );
   }, [listings, currentUser]);
 
-  function handleProfilePictureUpload(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleProfilePictureUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
     const file = event.target.files?.[0];
 
-    if (!file) return;
+    if (!file || !currentUser?.accountId) return;
 
-    const imageUrl = URL.createObjectURL(file);
-    setProfilePicture(imageUrl);
-    setProfilePictureFile(file)
+    const previewUrl = URL.createObjectURL(file);
+    setProfilePicture(previewUrl);
+
+    try {
+      const form = new FormData();
+      form.append("profile_picture", file);
+
+      const response = await fetch(
+        `/users/${currentUser.accountId}/profile-picture`,
+        {
+          method: "PATCH",
+          body: form,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Profile picture upload failed");
+      }
+
+      const updatedUser = {
+        ...currentUser,
+        profilePictureUrl: data.profile_picture_url,
+      };
+
+      setCurrentUser(updatedUser);
+      setProfilePicture(data.profile_picture_url);
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+
+      setMessage("Profile picture updated successfully!");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Profile picture upload failed"
+      );
+    }
   }
 
   function startEditListing(listing: Listing) {
@@ -431,20 +495,25 @@ function App() {
   }
 
   async function handleDeleteListing(listingId: string) {
-    const confirmDelete = window.confirm("Are you sure you want to delete this listing?");
-
-    if (!confirmDelete) return;
+    if (!currentUser) {
+      setMessage("Please log in to delete a listing.");
+      setPage("login");
+      return;
+    }
 
     try {
-      const response = await fetch("/deleteListing", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: listingId,
-        }),
-      });
+      const response = await fetch(
+        `/deleteListing?seller=${encodeURIComponent(currentUser.username)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: Number(listingId),
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -465,12 +534,19 @@ function App() {
     content = (
       <LoginPage
         message={message}
-        signupForm={signupForm}
-        setSignupForm={setSignupForm}
         loginForm={loginForm}
         setLoginForm={setLoginForm}
-        handleSignup={handleSignup}
         handleLogin={handleLogin}
+        setPage={setPage}
+      />
+    );
+  } else if (page === "signup") {
+    content = (
+      <SignUpPage
+        message={message}
+        signupForm={signupForm}
+        setSignupForm={setSignupForm}
+        handleSignup={handleSignup}
         setPage={setPage}
       />
     );
@@ -519,6 +595,12 @@ function App() {
         isLoadingListings={isLoadingListings}
         filteredListings={filteredListings}
         handleViewListing={handleViewListing}
+        hasActiveFilters={
+          searchTerm.trim() !== "" ||
+          academicLevelFilter !== "" ||
+          subjectFilter !== "" ||
+          priceFilter !== ""
+        }
       />
     );
   }
@@ -527,32 +609,9 @@ function App() {
     <div className="app">
       <Header setPage={setPage} />
 
-      {page !== "login" && (
-        <Navbar
-          isLoggedIn={isLoggedIn}
-          setPage={setPage}
-          goToProtectedPage={goToProtectedPage}
-          handleLogout={handleLogout}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          academicLevelFilter={academicLevelFilter}
-          setAcademicLevelFilter={setAcademicLevelFilter}
-          subjectFilter={subjectFilter}
-          setSubjectFilter={setSubjectFilter}
-          priceFilter={priceFilter}
-          setPriceFilter={setPriceFilter}
-        />
-      )}
-
-      {content}
-    </div>
-  );
-
-  return (
-    <div className="app">
-      <Header setPage={setPage} />
       <Navbar
         isLoggedIn={isLoggedIn}
+        page={page}
         setPage={setPage}
         goToProtectedPage={goToProtectedPage}
         handleLogout={handleLogout}
@@ -566,50 +625,7 @@ function App() {
         setPriceFilter={setPriceFilter}
       />
 
-      <main className="homepage">
-        {message && <p className="status-message homepage-message">{message}</p>}
-
-        <h2>Find the notes you need, at prices you’ll love!</h2>
-
-        <section className="listing-section">
-          {isLoadingListings && <p>Loading listings...</p>}
-
-          {!isLoadingListings && filteredListings.length === 0 && (
-            <div className="empty-state">
-              <h3>No listings yet</h3>
-              <p>Log in and create the first one!</p>
-            </div>
-          )}
-
-          {filteredListings.map((listing) => (
-            <div className="listing-card" key={listing.id || listing.title}>
-              <h3>{listing.title}</h3>
-
-              <p>{listing.description}</p>
-
-              <p className="listing-meta">
-                {listing.academicLevel} • {listing.subject}
-              </p>
-
-              <p className="listing-meta">Seller: {listing.seller}</p>
-
-              <p className="price">
-                {listing.price === 0 ? "Free" : `$${listing.price.toFixed(2)}`}
-              </p>
-
-              <div className="home-listing-actions">
-                <button
-                  className="small-green-btn"
-                  onClick={() => handleViewListing(listing)}
-                >
-                  View
-                </button>
-              </div>
-            </div>
-          ))}
-
-        </section>
-      </main>
+      {content}
     </div>
   );
 }

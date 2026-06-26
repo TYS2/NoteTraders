@@ -1,5 +1,11 @@
-export type Page = "home" | "login" | "account" | "createListing" | "listing";
-
+export type Page =
+  | "home"
+  | "login"
+  | "signup"
+  | "account"
+  | "createListing"
+  | "listing";
+  
 export type User = {
   id?: string;
   accountId?: number;
@@ -7,6 +13,7 @@ export type User = {
   email: string;
   phoneNumber?: string;
   balance?: number;
+  profilePictureUrl?: string;
 };
 
 export type Listing = {

@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import type { ListingForm } from "../types";
+import { SUBJECT_OPTIONS, ACADEMIC_LEVEL_OPTIONS } from "../constants";
 
 type CreateListingPageProps = {
   message: string;
@@ -56,18 +57,17 @@ function CreateListingPage({
         <select
           value={listingForm.academicLevel}
           onChange={(event) =>
-            setListingForm({
-              ...listingForm,
-              academicLevel: event.target.value,
-            })
+            setListingForm({ ...listingForm, academicLevel: event.target.value })
           }
           required
         >
-          <option value="">Choose one</option>
-          <option>Primary</option>
-          <option>Secondary</option>
-          <option>JC</option>
-          <option>University</option>
+          <option value="">Select academic level</option>
+
+          {ACADEMIC_LEVEL_OPTIONS.map((level) => (
+            <option key={level} value={level}>
+              {level}
+            </option>
+          ))}
         </select>
 
         <label>Subject</label>
@@ -78,11 +78,13 @@ function CreateListingPage({
           }
           required
         >
-          <option value="">Choose one</option>
-          <option>Math</option>
-          <option>Science</option>
-          <option>Computing</option>
-          <option>Chemistry</option>
+          <option value="">Select subject</option>
+
+          {SUBJECT_OPTIONS.map((subject) => (
+            <option key={subject} value={subject}>
+              {subject}
+            </option>
+          ))}
         </select>
 
         <button className="main-btn" type="submit">

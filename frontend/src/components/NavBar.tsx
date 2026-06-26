@@ -1,7 +1,10 @@
 import type { Page } from "../types";
+import { SUBJECT_OPTIONS, ACADEMIC_LEVEL_OPTIONS, PRICE_FILTER_OPTIONS } from "../constants";
 
 type NavbarProps = {
   isLoggedIn: boolean;
+  page: Page;
+
   setPage: React.Dispatch<React.SetStateAction<Page>>;
   goToProtectedPage: (targetPage: Page) => void;
   handleLogout: () => void;
@@ -21,6 +24,7 @@ type NavbarProps = {
 
 function Navbar({
   isLoggedIn,
+  page,
   setPage,
   goToProtectedPage,
   handleLogout,
@@ -37,62 +41,75 @@ function Navbar({
     <nav className="navbar">
       <div className="nav-left">
         <button onClick={() => setPage("home")}>Home</button>
-        <button onClick={() => goToProtectedPage("account")}>Account</button>
-        <button onClick={() => goToProtectedPage("createListing")}>
-          Sell Notes
-        </button>
 
         {isLoggedIn ? (
-          <button onClick={handleLogout}>Log Out</button>
+          <>
+            <button onClick={() => goToProtectedPage("account")}>Account</button>
+            <button onClick={() => goToProtectedPage("createListing")}>
+              Sell Notes
+            </button>
+            <button onClick={handleLogout}>Log Out</button>
+          </>
         ) : (
-          <button onClick={() => setPage("login")}>Log In</button>
+          <>
+            <button onClick={() => setPage("signup")}>Sign Up</button>
+            <button onClick={() => setPage("login")}>Sign In</button>
+          </>
         )}
       </div>
 
-      <div className="nav-right">
-        <select
-          value={academicLevelFilter}
-          onChange={(event) => setAcademicLevelFilter(event.target.value)}
-        >
-          <option value="">Academic Level</option>
-          <option>Primary</option>
-          <option>Secondary</option>
-          <option>JC</option>
-          <option>University</option>
-        </select>
+      {page === "home" && (
+        <div className="nav-right">
+          <select
+            value={academicLevelFilter}
+            onChange={(event) => setAcademicLevelFilter(event.target.value)}
+          >
+            <option value="">Academic Level</option>
 
-        <select
-          value={subjectFilter}
-          onChange={(event) => setSubjectFilter(event.target.value)}
-        >
-          <option value="">Subject</option>
-          <option>Math</option>
-          <option>Science</option>
-          <option>Computing</option>
-          <option>Chemistry</option>
-        </select>
+            {ACADEMIC_LEVEL_OPTIONS.map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={priceFilter}
-          onChange={(event) => setPriceFilter(event.target.value)}
-        >
-          <option value="">Price</option>
-          <option>Free</option>
-          <option>Below $5</option>
-          <option>$5 - $10</option>
-          <option>Above $10</option>
-        </select>
+          <select
+            value={subjectFilter}
+            onChange={(event) => setSubjectFilter(event.target.value)}
+          >
+            <option value="">Subject</option>
 
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-          />
-          <button type="button">⌕</button>
+            {SUBJECT_OPTIONS.map((subject) => (
+              <option key={subject} value={subject}>
+                {subject}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={priceFilter}
+            onChange={(event) => setPriceFilter(event.target.value)}
+          >
+            <option value="">Price</option>
+
+            {PRICE_FILTER_OPTIONS.map((priceOption) => (
+              <option key={priceOption} value={priceOption}>
+                {priceOption}
+              </option>
+            ))}
+          </select>
+
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+            <button type="button">⌕</button>
+          </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 }

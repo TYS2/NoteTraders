@@ -1,4 +1,5 @@
 import type { EditUserForm, Listing, ListingForm, Page, User } from "../types";
+import { useState } from "react";
 
 type AccountPageProps = {
   message: string;
@@ -47,6 +48,7 @@ function AccountPage({
   handleDeleteListing,
   handleViewListing,
 }: AccountPageProps) {
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   return (
     <main className="account-page">
       {message && <p className="status-message account-message">{message}</p>}
@@ -303,14 +305,39 @@ function AccountPage({
                       View
                     </button>
 
-                    <button
-                      className="small-green-btn"
-                      onClick={() =>
-                        listing.id && handleDeleteListing(listing.id)
-                      }
-                    >
-                      Delete
-                    </button>
+                    {confirmDeleteId === listing.id ? (
+                      <div className="delete-confirm-actions">
+                        <button
+                          className="confirm-delete-btn"
+                          onClick={() => {
+                            if (!listing.id) return;
+
+                            handleDeleteListing(listing.id);
+                            setConfirmDeleteId(null);
+                          }}
+                        >
+                          Confirm
+                        </button>
+
+                        <button
+                          className="cancel-delete-btn"
+                          onClick={() => setConfirmDeleteId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="small-green-btn"
+                        onClick={() => {
+                          if (!listing.id) return;
+
+                          setConfirmDeleteId(listing.id);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </>
               )}
