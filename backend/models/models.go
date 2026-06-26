@@ -78,3 +78,11 @@ type TransactionHistoryItem struct {
 	SellerUsername string    `json:"sellerUsername"`
 	PurchasedAt    time.Time `json:"purchasedAt"`
 }
+
+type TransactionHistoryEntry struct {
+	ID              int       `json:"id"`
+	TransactionType string    `json:"transactionType"`
+	Title           string    `json:"title"`
+	Amount          float64   `json:"amount"`
+	CreatedAt       time.Time `json:"createdAt"`
+}

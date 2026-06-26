@@ -11,11 +11,11 @@ import (
 	"backend/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func IncreaseUserBalance(c *gin.Context) {
 	client := initializers.GetDB()
+	ctx := c.Request.Context()
 
 	var transaction models.UserTransaction
 	if err := c.ShouldBindJSON(&transaction); err != nil {
@@ -23,8 +23,21 @@ func IncreaseUserBalance(c *gin.Context) {
 		return
 	}
 
-	_, err := client.ExecContext(
-		context.Background(),
+	if transaction.Amount <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Amount must be more than 0"})
+		return
+	}
+
+	dbTx, err := client.BeginTx(ctx, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	defer dbTx.Rollback()
+
+	result, err := dbTx.ExecContext(
+		ctx,
 		`UPDATE users SET balance = balance + $1 WHERE id = $2`,
 		transaction.Amount,
 		transaction.AccountID,
@@ -35,11 +48,41 @@ func IncreaseUserBalance(c *gin.Context) {
 		return
 	}
 
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check updated balance"})
+		return
+	}
+
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	_, err = dbTx.ExecContext(
+		ctx,
+		`INSERT INTO balance_transactions (user_id, transaction_type, amount)
+		 VALUES ($1, 'top_up', $2)`,
+		transaction.AccountID,
+		transaction.Amount,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record top up transaction"})
+		return
+	}
+
+	if err := dbTx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save transaction"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Balance increased successfully"})
 }
 
 func DecreaseUserBalance(c *gin.Context) {
 	client := initializers.GetDB()
+	ctx := c.Request.Context()
 
 	var transaction models.UserTransaction
 	if err := c.ShouldBindJSON(&transaction); err != nil {
@@ -47,20 +90,59 @@ func DecreaseUserBalance(c *gin.Context) {
 		return
 	}
 
-	_, err := client.ExecContext(
-		context.Background(),
-		`UPDATE users SET balance = balance - $1 WHERE id = $2`,
+	if transaction.Amount <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Amount must be more than 0"})
+		return
+	}
+
+	dbTx, err := client.BeginTx(ctx, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	defer dbTx.Rollback()
+
+	result, err := dbTx.ExecContext(
+		ctx,
+		`UPDATE users 
+		 SET balance = balance - $1 
+		 WHERE id = $2 AND balance >= $1`,
 		transaction.Amount,
 		transaction.AccountID,
 	)
 
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23514" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decrease balance"})
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decrease balance"})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check updated balance"})
+		return
+	}
+
+	if rowsAffected == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance or user not found"})
+		return
+	}
+
+	_, err = dbTx.ExecContext(
+		ctx,
+		`INSERT INTO balance_transactions (user_id, transaction_type, amount)
+		 VALUES ($1, 'withdraw', $2)`,
+		transaction.AccountID,
+		transaction.Amount,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record withdraw transaction"})
+		return
+	}
+
+	if err := dbTx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save transaction"})
 		return
 	}
 
@@ -278,4 +360,90 @@ func getTransactionItems(ctx context.Context, userID int, columnName string) ([]
 	}
 
 	return items, nil
+}
+
+func GetTransactionHistory(c *gin.Context) {
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	client := initializers.GetDB()
+
+	rows, err := client.QueryContext(
+		c.Request.Context(),
+		`
+		SELECT id, transaction_type, title, amount, created_at
+		FROM (
+			SELECT
+				p.id,
+				'Purchased'::text AS transaction_type,
+				p.title,
+				-p.price AS amount,
+				p.purchased_at AS created_at
+			FROM purchases p
+			WHERE p.buyer_id = $1
+
+			UNION ALL
+
+			SELECT
+				p.id,
+				'Sold'::text AS transaction_type,
+				p.title,
+				p.price AS amount,
+				p.purchased_at AS created_at
+			FROM purchases p
+			WHERE p.seller_id = $1
+
+			UNION ALL
+
+			SELECT
+				b.id,
+				CASE
+					WHEN b.transaction_type = 'top_up' THEN 'Top Up'
+					ELSE 'Withdraw'
+				END AS transaction_type,
+				''::text AS title,
+				CASE
+					WHEN b.transaction_type = 'top_up' THEN b.amount
+					ELSE -b.amount
+				END AS amount,
+				b.created_at AS created_at
+			FROM balance_transactions b
+			WHERE b.user_id = $1
+		) history
+		ORDER BY created_at DESC
+		`,
+		userID,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transaction history"})
+		return
+	}
+	defer rows.Close()
+
+	transactions := []models.TransactionHistoryEntry{}
+
+	for rows.Next() {
+		var transaction models.TransactionHistoryEntry
+
+		if err := rows.Scan(
+			&transaction.ID,
+			&transaction.TransactionType,
+			&transaction.Title,
+			&transaction.Amount,
+			&transaction.CreatedAt,
+		); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode transaction history"})
+			return
+		}
+
+		transactions = append(transactions, transaction)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"transactions": transactions,
+	})
 }

@@ -25,4 +25,5 @@ func Route(r *gin.Engine) {
 	r.POST("/addSubject", handlers.AddSubject)
 	r.GET("/academicLevels/:levelName", handlers.GetLevelsID)
 	r.POST("/addAcademicLevel", handlers.AddLevel)
+	r.GET("/transactions/:id/history", handlers.GetTransactionHistory)
 }
