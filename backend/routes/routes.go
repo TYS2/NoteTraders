@@ -13,6 +13,8 @@ func Route(r *gin.Engine) {
 	r.POST("/updateUser", handlers.UpdateUser)
 	r.POST("/addBalance", handlers.IncreaseUserBalance)
 	r.POST("/withdrawBalance", handlers.DecreaseUserBalance)
+	r.POST("/purchaseListing", handlers.PurchaseListing)
+	r.GET("/transactions/:id", handlers.GetUserTransactions)
 	r.POST("/createListing", handlers.CreateListing)
 	r.POST("/updateListing", handlers.UpdateListing)
 	r.POST("/deleteListing", handlers.DeleteListing)
@@ -23,4 +25,5 @@ func Route(r *gin.Engine) {
 	r.POST("/addSubject", handlers.AddSubject)
 	r.GET("/academicLevels/:levelName", handlers.GetLevelsID)
 	r.POST("/addAcademicLevel", handlers.AddLevel)
+	r.GET("/transactions/:id/history", handlers.GetTransactionHistory)
 }

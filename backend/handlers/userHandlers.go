@@ -4,17 +4,18 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strings"
-	"strconv"
 	"os"
+	"strconv"
+	"strings"
 
 	"backend/initializers"
-	"backend/models"	
+	"backend/models"
 	"backend/services"
 	"backend/utils"
 
-	"github.com/gin-gonic/gin"
 	"errors"
+
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -78,7 +79,7 @@ func Signup(c *gin.Context) {
 		user.Email,
 		user.PhoneNumber,
 	).Scan(&user.AccountID)
-	if err!= nil {
+	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // Unique violation
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
@@ -139,43 +140,10 @@ func UploadProfilePicture(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":             "profile picture updated",
-		"profile_picture_url":  url,
-		"profile_picture_key":  key,
+		"profile_picture_url": url,
+		"profile_picture_key": key,
 	})
 }
-
-// func getNextAccountID(client *mongo.Client) (int64, error) {
-// 	countersCollection := client.Database("NoteTraders").Collection("counters")
-
-// 	filter := bson.M{"_id": "accountId"}
-
-// 	update := bson.M{
-// 		"$inc": bson.M{
-// 			"seq": 1,
-// 		},
-// 	}
-
-// 	opts := options.FindOneAndUpdate().
-// 		SetUpsert(true).
-// 		SetReturnDocument(options.After)
-
-// 	var counter struct {
-// 		Seq int64 `bson:"seq"`
-// 	}
-
-// 	err := countersCollection.FindOneAndUpdate(
-// 		context.TODO(),
-// 		filter,
-// 		update,
-// 		opts,
-// 	).Decode(&counter)
-
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	return counter.Seq, nil
-// }
 
 func Login(c *gin.Context) {
 	client := initializers.GetDB()
@@ -247,7 +215,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-
 	_, err := client.ExecContext(
 		context.Background(),
 		`UPDATE users SET username = $1, email = $2, phone_number = $3 WHERE id = $4`,
@@ -255,7 +222,7 @@ func UpdateUser(c *gin.Context) {
 		user.Email,
 		user.PhoneNumber,
 		user.AccountID)
-	if err!= nil {
+	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // Unique violation
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
@@ -290,7 +257,7 @@ func getUserIDByName(username string) (int, error) {
 
 func getUserbyID(accountID int) (string, error) {
 	client := initializers.GetDB()
-	
+
 	var username string
 	err := client.QueryRowContext(
 		context.Background(),
@@ -304,57 +271,3 @@ func getUserbyID(accountID int) (string, error) {
 	return username, nil
 }
 
-func IncreaseUserBalance(c *gin.Context) {
-	client := initializers.GetDB()
-
-	var transaction models.UserTransaction
-	if err := c.ShouldBindJSON(&transaction); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction data"})
-		return
-	}
-
-	_, err := client.ExecContext(
-		context.Background(),
-		`UPDATE users SET balance = balance + $1 WHERE id = $2`,
-		transaction.Amount,
-		transaction.AccountID,
-	)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to increase balance"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Balance increased successfully"})
-	return
-}
-
-func DecreaseUserBalance(c *gin.Context) {
-	client := initializers.GetDB()
-
-	var transaction models.UserTransaction
-	if err := c.ShouldBindJSON(&transaction); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction data"})
-		return
-	}
-
-	_, err := client.ExecContext(
-		context.Background(),
-		`UPDATE users SET balance = balance - $1 WHERE id = $2`,
-		transaction.Amount,
-		transaction.AccountID,
-	)
-
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23514" { // Check violation (e.g., balance cannot be negative)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decrease balance"})
-		}
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Balance decreased successfully"})
-	return
-}
