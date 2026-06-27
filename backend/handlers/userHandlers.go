@@ -11,6 +11,7 @@ import (
 	"backend/initializers"
 	"backend/models"
 	"backend/services"
+	"backend/utils"
 
 	"errors"
 
@@ -64,11 +65,17 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	err := client.QueryRowContext(
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+    c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+    return
+}
+
+	err = client.QueryRowContext(
 		context.Background(),
 		`INSERT INTO users (username, password, email, phone_number) VALUES ($1, $2, $3, $4) RETURNING id`,
 		user.Username,
-		user.Password,
+		hashedPassword,
 		user.Email,
 		user.PhoneNumber,
 	).Scan(&user.AccountID)
@@ -148,23 +155,24 @@ func Login(c *gin.Context) {
 	}
 
 	var result models.User
+	var storedHash string
 	err := client.QueryRowContext(
 		context.Background(),
-		`SELECT id, username, email, phone_number, balance, COALESCE(pfp_url, '') FROM users WHERE username = $1 AND password = $2`,
+		`SELECT id, username, email, phone_number, balance, password FROM users WHERE username = $1`,
 		user.Username,
-		user.Password,
-	).Scan(
-		&result.AccountID,
-		&result.Username,
-		&result.Email,
-		&result.PhoneNumber,
-		&result.Balance,
-		&result.ProfilePictureUrl,
-	)
+	).Scan(&result.AccountID, &result.Username, &result.Email, &result.PhoneNumber, &result.Balance, &storedHash)
 
 	if err != nil {
 		log.Println("Error occurred while fetching user:", err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	err = utils.CheckPassword(user.Password, storedHash)
+
+	if err !=nil{
+		log.Println("Error occurred while fetching user:", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 
