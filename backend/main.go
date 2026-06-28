@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func init() {
@@ -37,7 +39,18 @@ func main() {
 
 	routes.Route(r)
 
-	if err := r.Run(":8080"); err != nil {
+	
+	er := godotenv.Load()
+	if er != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }
