@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"fmt"
 	"net/http"
 	"os"
-	"fmt"
 	"strconv"
 
 	"backend/initializers"
