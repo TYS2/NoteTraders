@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import type { TransactionHistoryEntry } from "../types";
 
+const API_URL = import.meta.env.VITE_API_URL;
 function TransactionHistoryPage() {
   const navigate = useNavigate();
   const { currentUser } = useAppContext();
@@ -22,7 +23,7 @@ function TransactionHistoryPage() {
       }
 
       try {
-        const response = await fetch(`/transactions/${userId}/history`);
+        const response = await fetch(`${API_URL}/transactions/${userId}/history`);
         const data = await response.json();
 
         if (!response.ok) {

@@ -28,7 +28,6 @@ function AccountPage() {
     cancelEditListing,
     updateListing,
     deleteListing,
-    setMessage,
     topUpBalance,
     withdrawBalance,
     itemsSold,

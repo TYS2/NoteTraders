@@ -256,7 +256,8 @@ func UploadListingPicture(c *gin.Context) {
 		fileHeader,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload image"})
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 

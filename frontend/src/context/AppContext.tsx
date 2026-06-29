@@ -86,6 +86,7 @@ type AppContextValue = {
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
+const API_URL = import.meta.env.VITE_API_URL;
 
 function readStoredUser() {
   try {
@@ -213,7 +214,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsLoadingListings(true);
 
     try {
-      const response = await fetch("/listings");
+      const response = await fetch(`${API_URL}/listings`);
       const text = await response.text();
 
       if (!text) {
@@ -276,7 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch("/signup", {
+      const response = await fetch(`${API_URL}/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -336,7 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMessage("");
 
     try {
-      const response = await fetch("/login", {
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -393,7 +394,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch("/createListing", {
+      const response = await fetch(`${API_URL}/createListing`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -420,7 +421,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       form.append("listing_picture", listingForm.photoFile);
 
       const uploadResponse = await fetch(
-        `/listings/${createdListingId}/listing-picture`,
+        `${API_URL}/listings/${createdListingId}/listing-picture`,
         {
           method: "PATCH",
           body: form,
@@ -486,7 +487,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (validAmount === null) return false;
 
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -540,7 +541,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`/transactions/${userId}`);
+      const response = await fetch(`${API_URL}/transactions/${userId}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -580,7 +581,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch("/purchaseListing", {
+      const response = await fetch(`${API_URL}/purchaseListing`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -662,7 +663,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch("/updateUser", {
+      const response = await fetch(`${API_URL}/updateUser`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -717,7 +718,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       form.append("profile_picture", file);
 
       const response = await fetch(
-        `/users/${currentUser.accountId}/profile-picture`,
+        `${API_URL}/users/${currentUser.accountId}/profile-picture`,
         {
           method: "PATCH",
           body: form,
@@ -787,7 +788,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch("/updateListing", {
+      const response = await fetch(`${API_URL}/updateListing`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -814,7 +815,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         form.append("listing_picture", editListingForm.photoFile);
 
         const uploadResponse = await fetch(
-          `/listings/${listingId}/listing-picture`,
+          `${API_URL}/listings/${listingId}/listing-picture`,
           {
             method: "PATCH",
             body: form,
@@ -845,7 +846,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(
-        `/deleteListing?seller=${encodeURIComponent(currentUser.username)}`,
+        `${API_URL}/deleteListing?seller=${encodeURIComponent(currentUser.username)}`,
         {
           method: "POST",
           headers: {

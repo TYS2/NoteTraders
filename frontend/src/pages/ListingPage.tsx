@@ -7,7 +7,6 @@ function ListingPage() {
 
   const {
     message,
-    clearMessage,
     getListingById,
     isLoadingListings,
     purchaseListing,

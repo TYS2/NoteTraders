@@ -14,11 +14,11 @@ var db *sql.DB
 func ConnectDB() {
 	er := godotenv.Load()
 	if er != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Fatal("DATABASE_URL is not set")
+		log.Println("DATABASE_URL is not set")
 	}
 
 	var err error
