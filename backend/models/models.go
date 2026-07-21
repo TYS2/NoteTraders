@@ -86,3 +86,16 @@ type TransactionHistoryEntry struct {
 	Amount          float64   `json:"amount"`
 	CreatedAt       time.Time `json:"createdAt"`
 }
+
+type IncomingMessage struct {
+	ConversationID int    `json:"conversation_id"`
+	Message string `json:"message"`
+}
+
+type OutgoingMessage struct {
+	ID             int       `json:"id"`
+	ConversationID int      `json:"conversation_id"`
+	SenderID       int      `json:"sender_id"`
+	Message        string   `json:"message"`
+	CreatedAt      time.Time `json:"created_at"`
+}
