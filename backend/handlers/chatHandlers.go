@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"time"
 
 	"backend/initializers"
 	"backend/models"
@@ -172,4 +171,58 @@ func GetConversationMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, messages)
+}
+
+func CreateConversation(c *gin.Context) {
+	db := initializers.GetDB()
+
+	var request models.CreateConversationRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid conversation data",
+		})
+		return
+	}
+
+	if request.BuyerID == 0 || request.SellerID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "buyer_id and seller_id are required",
+		})
+		return
+	}
+
+	if request.BuyerID == request.SellerID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "buyer and seller cannot be the same user",
+		})
+		return
+	}
+
+	var conversation models.Conversation
+
+	err := db.QueryRowContext(
+		context.Background(),
+		`INSERT INTO conversations (buyer_id, seller_id)
+		 VALUES ($1, $2)
+		 ON CONFLICT (buyer_id, seller_id)
+		 DO UPDATE SET buyer_id = EXCLUDED.buyer_id
+		 RETURNING id, buyer_id, seller_id, created_at`,
+		request.BuyerID,
+		request.SellerID,
+	).Scan(
+		&conversation.ID,
+		&conversation.BuyerID,
+		&conversation.SellerID,
+		&conversation.CreatedAt,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, conversation)
 }

@@ -99,3 +99,15 @@ type OutgoingMessage struct {
 	Message        string   `json:"message"`
 	CreatedAt      time.Time `json:"created_at"`
 }
+
+type CreateConversationRequest struct {
+	BuyerID   int `json:"buyer_id"`
+	SellerID  int `json:"seller_id"`
+}
+
+type Conversation struct {
+	ID        int       `json:"id"`
+	BuyerID   int      `json:"buyer_id"`
+	SellerID  int      `json:"seller_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
