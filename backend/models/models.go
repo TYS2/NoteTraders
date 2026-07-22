@@ -111,3 +111,8 @@ type Conversation struct {
 	SellerID  int      `json:"seller_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type Favourite struct {
+	UserID    int `json:"user_id"`
+	ListingID int `json:"listing_id"`
+}
