@@ -81,3 +81,28 @@ func AddFavourite(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Favourite added successfully"})
 }
+
+func RemoveFavourite(c *gin.Context) {
+	var favourite models.Favourite
+	if err := c.ShouldBindJSON(&favourite); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favourite data"})
+		return
+	}
+
+	client := initializers.GetDB()
+
+	_, err := client.ExecContext(
+		context.Background(),
+		`DELETE FROM favourites WHERE user_id = $1 AND listing_id = $2`,
+		favourite.UserID,
+		favourite.ListingID,
+	)
+
+	if err != nil {
+		log.Println("Error removing favourite:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove favourite"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Favourite removed successfully"})
+}	
