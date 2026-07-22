@@ -49,4 +49,7 @@ func Route(r *gin.Engine) {
 	r.GET("/academicLevels/:levelName", handlers.GetLevelsID)
 	r.POST("/addAcademicLevel", handlers.AddLevel)
 	r.GET("/transactions/:id/history", handlers.GetTransactionHistory)
+	r.POST("/conversations", handlers.CreateConversation)
+	r.GET("/conversations/:conversationId/messages", handlers.GetConversationMessages)
+	r.GET("/ws/chat/:conversationId", handlers.HandleChatWebSocket)
 }
