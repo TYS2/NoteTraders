@@ -56,3 +56,28 @@ func GetFavourites(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"listings": listings})
 }
+
+func AddFavourite(c *gin.Context) {
+	var favourite models.Favourite
+	if err := c.ShouldBindJSON(&favourite); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favourite data"})
+		return
+	}
+
+	client := initializers.GetDB()
+
+	_,err := client.ExecContext(
+		context.Background(),
+		`INSERT INTO favourites (user_id, listing_id) VALUES ($1, $2) ON CONFLICT (user_id, listing_id) DO NOTHING`,
+		favourite.UserID,
+		favourite.ListingID,
+	)
+
+	if err != nil {
+		log.Println("Error adding favourite:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add favourite"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Favourite added successfully"})
+}

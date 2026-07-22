@@ -53,6 +53,6 @@ func Route(r *gin.Engine) {
 	r.GET("/conversations/:conversationId/messages", handlers.GetConversationMessages)
 	r.GET("/ws/chat/:conversationId", handlers.HandleChatWebSocket)
 	r.GET("/favourites/:userId", handlers.GetFavourites)
-	// r.POST("/favourites", handlers.AddFavourite)
+	r.POST("/favourites", handlers.AddFavourite)
 	// r.DELETE("/favourites", handlers.RemoveFavourite)
 }
