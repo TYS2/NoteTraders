@@ -116,3 +116,12 @@ type Favourite struct {
 	UserID    int `json:"user_id"`
 	ListingID int `json:"listing_id"`
 }
+
+type OTPrequest struct {
+	UserID int `json:"user_id"`
+}
+
+type VerifyOTPRequest struct {
+	Username string `json:"username"`
+	OTP    string `json:"otp"`
+}

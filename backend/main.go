@@ -45,6 +45,8 @@ func main() {
 		log.Println("Error loading .env file")
 	}
 
+	
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
