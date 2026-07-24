@@ -475,6 +475,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    let createdListingId: string | number | null = null;
+    let photoUploaded = false;
+
     try {
       const response = await fetch(`${API_URL}/createListing`, {
         method: "POST",
@@ -497,7 +500,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error || "Failed to create listing");
       }
 
-      const createdListingId = data.id;
+      createdListingId = data.id;
 
       const form = new FormData();
       form.append("listing_picture", listingForm.photoFile);
@@ -515,12 +518,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!uploadResponse.ok) {
         throw new Error(uploadData.error || "Photo upload failed");
       }
+      photoUploaded = true;
 
       setMessage("Listing created successfully!");
       setListingForm(emptyListingForm);
       await fetchListings();
       return true;
     } catch (error) {
+          if (createdListingId !== null && !photoUploaded) {
+      try {
+        await fetch(
+          `${API_URL}/deleteListing?seller=${encodeURIComponent(
+            currentUser.username
+          )}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: Number(createdListingId),
+            }),
+          }
+        );
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up incomplete listing:",
+          cleanupError
+        );
+      }
+    }
       setMessage(error instanceof Error ? error.message : "Failed to create listing");
       return false;
     }
