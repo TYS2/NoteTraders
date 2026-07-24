@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 	"os"
-	"backend/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -47,18 +46,6 @@ func main() {
 	}
 
 	
-
-	err := services.SendEmail(
-	"yweesee@gmail.com",
-	"SMTP Test",
-	"<h2>Hello!</h2><p>This is a test email from Orbitz.</p>",
-)
-
-	if err != nil {
-		log.Println("Email error:", err)
-	} else {
-		log.Println("Email sent!")
-	}
 
 	port := os.Getenv("PORT")
 	if port == "" {

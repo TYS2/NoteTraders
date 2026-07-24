@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"fmt"
 
 	"backend/initializers"
 	"backend/models"
@@ -67,9 +68,9 @@ func Signup(c *gin.Context) {
 
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
-    c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-    return
-}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
 
 	err = client.QueryRowContext(
 		context.Background(),
@@ -90,11 +91,82 @@ func Signup(c *gin.Context) {
 		return
 	}
 
+	err = sendOTP(user.AccountID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send OTP"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Signup successful",
 		"user":    user.AccountID,
 	})
 }
+
+func sendOTP(userID int) error {
+	otp,hash := utils.GenerateOTP()
+	client := initializers.GetDB()
+
+	userEmail := ""
+	err := client.QueryRowContext(
+		context.Background(),
+		`SELECT email FROM users WHERE id = $1`,
+		userID,
+	).Scan(&userEmail)
+
+	if err != nil {
+		log.Println("Error occurred while fetching user email:", err)
+		return err
+	}
+
+	err= services.SendEmail(
+		userEmail,
+		"OTP Verification",
+		fmt.Sprintf("<h2>Your OTP is: %s</h2><p>Please use this OTP to verify your account.</p>", otp),
+	)
+
+	if err != nil {
+		log.Println("Error sending email:", err)
+		return err
+	}
+
+	_,err= client.ExecContext(
+		context.Background(),
+		`INSERT INTO otps (user_id, hash) VALUES ($1, $2)
+		ON CONFLICT (user_id) DO UPDATE SET hash = EXCLUDED.hash`,
+		userID,
+		hash,
+	)
+
+	if err != nil {
+		log.Println("Error storing OTP:", err)
+		return err
+	}
+	return nil
+}
+
+func GetOTP(c *gin.Context) {
+
+	var request models.OTPrequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
+
+	err := sendOTP(request.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate OTP"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "OTP generated and sent successfully",
+	})
+	return
+}
+
+
+
 
 func UploadProfilePicture(c *gin.Context) {
 	db := initializers.GetDB()
@@ -176,9 +248,61 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	err = sendOTP(result.AccountID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send OTP"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
+		"message": "Password correct, please enter the OTP sent to your email",
 		"user":    result,
+	})
+}
+
+func VerifyOTP(c *gin.Context) {
+	var request models.VerifyOTPRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
+
+	client := initializers.GetDB()
+
+	var UserID int
+	err := client.QueryRowContext(
+		context.Background(),
+		`SELECT id FROM users WHERE username = $1`,
+		request.Username,
+	).Scan(&UserID)
+
+	if err != nil {
+		log.Println("Error occurred while fetching user ID:", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	var otpHash string
+	err = client.QueryRowContext(
+		context.Background(),
+		`SELECT hash FROM otps WHERE user_id = $1`,
+		UserID,
+	).Scan(&otpHash)
+
+	if err != nil {
+		log.Println("Error occurred while fetching OTP:", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "OTP not found"})
+		return
+	}
+
+	err = utils.CheckPassword(request.OTP, otpHash)
+	if err != nil {
+		log.Println("Error occurred while verifying OTP:", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "OTP verified successfully",
 	})
 }
 

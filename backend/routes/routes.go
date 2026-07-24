@@ -55,4 +55,6 @@ func Route(r *gin.Engine) {
 	r.GET("/favourites/:userId", handlers.GetFavourites)
 	r.POST("/favourites", handlers.AddFavourite)
 	r.DELETE("/favourites", handlers.RemoveFavourite)
+	r.POST("/generate-otp", handlers.GetOTP)
+	r.POST("/verify-otp", handlers.VerifyOTP)
 }
