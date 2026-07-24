@@ -121,7 +121,7 @@ func sendOTP(userID int) error {
 
 	err= services.SendEmail(
 		userEmail,
-		"OTP Verification",
+		"NoteTraders OTP Verification",
 		fmt.Sprintf("<h2>Your OTP is: %s</h2><p>Please use this OTP to verify your account.</p>", otp),
 	)
 
