@@ -33,7 +33,7 @@ type UpdateUser struct {
 type CreateListing struct {
 	Title         string  `json:"title" binding:"required"`
 	Description   string  `json:"description" binding:"required"`
-	Price         float64 `json:"price" binding:"required"`
+	Price         float64 `json:"price" binding:"gte=0"`
 	Seller        string  `json:"seller" binding:"required"`
 	AcademicLevel string  `json:"academicLevel" binding:"required"`
 	Subject       string  `json:"subject" binding:"required"`
@@ -89,26 +89,26 @@ type TransactionHistoryEntry struct {
 
 type IncomingMessage struct {
 	ConversationID int    `json:"conversation_id"`
-	Message string `json:"message"`
+	Message        string `json:"message"`
 }
 
 type OutgoingMessage struct {
 	ID             int       `json:"id"`
-	ConversationID int      `json:"conversation_id"`
-	SenderID       int      `json:"sender_id"`
-	Message        string   `json:"message"`
+	ConversationID int       `json:"conversation_id"`
+	SenderID       int       `json:"sender_id"`
+	Message        string    `json:"message"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
 type CreateConversationRequest struct {
-	BuyerID   int `json:"buyer_id"`
-	SellerID  int `json:"seller_id"`
+	BuyerID  int `json:"buyer_id"`
+	SellerID int `json:"seller_id"`
 }
 
 type Conversation struct {
 	ID        int       `json:"id"`
-	BuyerID   int      `json:"buyer_id"`
-	SellerID  int      `json:"seller_id"`
+	BuyerID   int       `json:"buyer_id"`
+	SellerID  int       `json:"seller_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

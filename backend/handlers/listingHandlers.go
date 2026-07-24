@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"backend/initializers"
 	"backend/models"
@@ -51,8 +52,17 @@ func CreateListing(c *gin.Context) {
 	).Scan(&listingID)
 
 	if err != nil {
-		log.Println("Error creating listing:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create listing"})
+		log.Printf(
+			"CreateListing database error — seller=%q, level=%q, subject=%q: %v",
+			listing.Seller,
+			listing.AcademicLevel,
+			listing.Subject,
+			err,
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "The listing could not be saved. Check the backend terminal for details.",
+		})
 		return
 	}
 
@@ -143,11 +153,32 @@ func GetListings(c *gin.Context) {
 	stringMinPrice = c.Query("min_price")
 	stringMaxPrice = c.Query("max_price")
 	priceOrder = c.Query("price_order")
+	searchTerm := strings.TrimSpace(c.Query("search"))
 
 	query :=
 		`SELECT id, title, description, price, seller_id, level_id, subject_id, COALESCE(photo_url, '') FROM listings WHERE 1=1`
 	var args []interface{}
 	argNum := 1
+
+	if searchTerm != "" {
+		query += fmt.Sprintf(
+			` AND (
+				title ILIKE $%d
+				OR description ILIKE $%d
+				OR subject_id IN (
+					SELECT id
+					FROM subjects
+					WHERE subject_name ILIKE $%d
+				)
+			)`,
+			argNum,
+			argNum,
+			argNum,
+		)
+
+		args = append(args, "%"+searchTerm+"%")
+		argNum++
+	}
 
 	// Add filters only if provided
 	if stringSubjectID != "" {
@@ -244,15 +275,19 @@ func UploadListingPicture(c *gin.Context) {
 	db := initializers.GetDB()
 	r2Client := services.NewR2Client()
 
-	userID, err := strconv.Atoi(c.Param("id"))
+	listingID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid listing ID",
+		})
 		return
 	}
 
 	fileHeader, err := c.FormFile("listing_picture")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "listing_picture is required"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "A listing photo is required",
+		})
 		return
 	}
 
@@ -264,29 +299,65 @@ func UploadListingPicture(c *gin.Context) {
 		fileHeader,
 	)
 	if err != nil {
+		log.Printf(
+			"Listing photo upload failed — listingID=%d: %v",
+			listingID,
+			err,
+		)
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "The listing was created, but the photo could not be uploaded.",
+		})
 		return
 	}
 
-	_, err = db.ExecContext(
-		context.Background(),
+	result, err := db.ExecContext(
+		c.Request.Context(),
 		`UPDATE listings
-		 SET photo_key = $1, photo_url=$2
+		 SET photo_key = $1, photo_url = $2
 		 WHERE id = $3`,
 		key,
 		url,
-		userID,
+		listingID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		log.Printf(
+			"Failed to save listing photo URL — listingID=%d: %v",
+			listingID,
+			err,
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "The photo was uploaded, but its URL could not be saved.",
+		})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf(
+			"Failed to check listing photo update — listingID=%d: %v",
+			listingID,
+			err,
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to verify the listing photo update.",
+		})
+		return
+	}
+
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Listing not found",
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":             "profile picture updated",
-		"profile_picture_url": url,
-		"profile_picture_key": key,
+		"message":  "Listing photo uploaded successfully",
+		"photoUrl": url,
+		"photoKey": key,
 	})
 }
 func SearchListings(c *gin.Context) {

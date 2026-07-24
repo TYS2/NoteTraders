@@ -64,7 +64,7 @@ function NavBar() {
             value={academicLevelFilter}
             onChange={(event) => setAcademicLevelFilter(event.target.value)}
           >
-            <option value="">Academic Level</option>
+            <option value="">All Levels</option>
 
             {ACADEMIC_LEVEL_OPTIONS.map((level) => (
               <option key={level} value={level}>
@@ -77,7 +77,7 @@ function NavBar() {
             value={subjectFilter}
             onChange={(event) => setSubjectFilter(event.target.value)}
           >
-            <option value="">Subject</option>
+            <option value="">All Subjects</option>
 
             {SUBJECT_OPTIONS.map((subject) => (
               <option key={subject} value={subject}>
@@ -90,7 +90,7 @@ function NavBar() {
             value={priceFilter}
             onChange={(event) => setPriceFilter(event.target.value)}
           >
-            <option value="">Price</option>
+            <option value="">All Prices</option>
 
             {PRICE_FILTER_OPTIONS.map((priceOption) => (
               <option key={priceOption} value={priceOption}>
