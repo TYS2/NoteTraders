@@ -83,14 +83,19 @@ function SignUpPage() {
           <div className="form-row">
             <label>Phone:</label>
             <input
-              type="text"
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]{8}"
+              maxLength={8}
               value={signupForm.phoneNumber}
-              onChange={(event) =>
+              onChange={(event) => {
+                const digitsOnly = event.target.value.replace(/\D/g, "");
+
                 setSignupForm({
                   ...signupForm,
-                  phoneNumber: event.target.value,
-                })
-              }
+                  phoneNumber: digitsOnly,
+                });
+              }}
               required
             />
           </div>
