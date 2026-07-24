@@ -127,6 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [currentUser, setCurrentUser] = useState<User | null>(storedUser);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
 
   const [itemsSold, setItemsSold] = useState<TransactionItem[]>([]);
@@ -176,31 +177,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     subjectFilter !== "" ||
     priceFilter !== "";
 
-  const filteredListings = useMemo(() => {
-    return listings.filter((listing) => {
-      const matchesSearch =
-        listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        listing.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        listing.subject.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesAcademicLevel =
-        !academicLevelFilter || listing.academicLevel === academicLevelFilter;
-
-      const matchesSubject = !subjectFilter || listing.subject === subjectFilter;
-
-      const matchesPrice =
-        !priceFilter ||
-        (priceFilter === "Free" && listing.price === 0) ||
-        (priceFilter === "Below $5" && listing.price > 0 && listing.price < 5) ||
-        (priceFilter === "$5 - $10" &&
-          listing.price >= 5 &&
-          listing.price <= 10) ||
-        (priceFilter === "Above $10" && listing.price > 10);
-
-      return matchesSearch && matchesAcademicLevel && matchesSubject && matchesPrice;
-    });
-  }, [listings, searchTerm, academicLevelFilter, subjectFilter, priceFilter]);
-
   const myListings = useMemo(() => {
     if (!currentUser) return [];
     return listings.filter((listing) => listing.seller === currentUser.username);
@@ -208,6 +184,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function clearMessage() {
     setMessage("");
+  }
+
+  function buildListingFilterParams() {
+    const params = new URLSearchParams();
+
+    const trimmedSearchTerm = searchTerm.trim();
+
+    if (trimmedSearchTerm) {
+      params.set("search", trimmedSearchTerm);
+    }
+
+    if (academicLevelFilter) {
+      params.set("level_id", academicLevelFilter);
+    }
+
+    if (subjectFilter) {
+      params.set("subject_id", subjectFilter);
+    }
+
+    switch (priceFilter) {
+      case "Free":
+        params.set("min_price", "0");
+        params.set("max_price", "0");
+        break;
+
+      case "Below $5":
+        params.set("min_price", "0.01");
+        params.set("max_price", "4.99");
+        break;
+
+      case "$5 - $10":
+        params.set("min_price", "5");
+        params.set("max_price", "10");
+        break;
+
+      case "Above $10":
+        params.set("min_price", "10.01");
+        break;
+    }
+
+    return params;
   }
 
   async function fetchListings() {
@@ -229,7 +246,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error || "Failed to fetch listings");
       }
 
-      setListings(data.listings || []);
+      const fetchedListings = data.listings || [];
+
+      setListings(fetchedListings);
+
+      if (!hasActiveFilters) {
+        setFilteredListings(fetchedListings);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to fetch listings");
     } finally {
@@ -237,9 +260,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function fetchFilteredListings(signal?: AbortSignal) {
+    setIsLoadingListings(true);
+
+    try {
+      const params = buildListingFilterParams();
+      const queryString = params.toString();
+
+      const url = queryString
+        ? `${API_URL}/listings?${queryString}`
+        : `${API_URL}/listings`;
+
+      const response = await fetch(url, { signal });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to filter listings");
+      }
+
+      setFilteredListings(data.listings || []);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      setMessage(
+        error instanceof Error ? error.message : "Failed to filter listings"
+      );
+    } finally {
+      if (!signal?.aborted) {
+        setIsLoadingListings(false);
+      }
+    }
+  }
+
   useEffect(() => {
     fetchListings();
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const delay = searchTerm.trim() ? 300 : 0;
+
+    const timeoutId = window.setTimeout(() => {
+      fetchFilteredListings(controller.signal);
+    }, delay);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [
+    searchTerm,
+    academicLevelFilter,
+    subjectFilter,
+    priceFilter,
+  ]);
 
   useEffect(() => {
     if (currentUser?.accountId || currentUser?.id) {
@@ -261,6 +338,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       !signupForm.phoneNumber.trim()
     ) {
       setMessage("Please fill in all fields");
+      return false;
+    }
+
+    if (!/^\d{8}$/.test(signupForm.phoneNumber)) {
+      setMessage("Phone number must contain exactly 8 digits.");
       return false;
     }
 
@@ -393,6 +475,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    let createdListingId: string | number | null = null;
+    let photoUploaded = false;
+
     try {
       const response = await fetch(`${API_URL}/createListing`, {
         method: "POST",
@@ -415,7 +500,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error || "Failed to create listing");
       }
 
-      const createdListingId = data.id;
+      createdListingId = data.id;
 
       const form = new FormData();
       form.append("listing_picture", listingForm.photoFile);
@@ -433,12 +518,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!uploadResponse.ok) {
         throw new Error(uploadData.error || "Photo upload failed");
       }
+      photoUploaded = true;
 
       setMessage("Listing created successfully!");
       setListingForm(emptyListingForm);
       await fetchListings();
       return true;
     } catch (error) {
+          if (createdListingId !== null && !photoUploaded) {
+      try {
+        await fetch(
+          `${API_URL}/deleteListing?seller=${encodeURIComponent(
+            currentUser.username
+          )}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: Number(createdListingId),
+            }),
+          }
+        );
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up incomplete listing:",
+          cleanupError
+        );
+      }
+    }
       setMessage(error instanceof Error ? error.message : "Failed to create listing");
       return false;
     }
@@ -610,6 +719,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       setListings((previousListings) =>
         previousListings.filter((item) => String(item.id) !== String(listing.id))
+      );
+
+      setFilteredListings((previousListings) =>
+        previousListings.filter(
+          (item) => String(item.id) !== String(listing.id)
+        )
       );
 
       setItemsPurchased((previousItems) => [

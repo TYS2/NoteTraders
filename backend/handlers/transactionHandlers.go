@@ -103,28 +103,52 @@ func DecreaseUserBalance(c *gin.Context) {
 
 	defer dbTx.Rollback()
 
-	result, err := dbTx.ExecContext(
+	var currentBalance float64
+
+	err = dbTx.QueryRowContext(
 		ctx,
-		`UPDATE users 
-		 SET balance = balance - $1 
-		 WHERE id = $2 AND balance >= $1`,
+		`SELECT balance
+		FROM users
+		WHERE id = $1
+		FOR UPDATE`,
+		transaction.AccountID,
+	).Scan(&currentBalance)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "Failed to retrieve user balance"},
+		)
+		return
+	}
+
+	if currentBalance < transaction.Amount {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": "Insufficient balance"},
+		)
+		return
+	}
+
+	_, err = dbTx.ExecContext(
+		ctx,
+		`UPDATE users
+		SET balance = balance - $1
+		WHERE id = $2`,
 		transaction.Amount,
 		transaction.AccountID,
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decrease balance"})
-		return
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check updated balance"})
-		return
-	}
-
-	if rowsAffected == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance or user not found"})
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "Failed to decrease balance"},
+		)
 		return
 	}
 
