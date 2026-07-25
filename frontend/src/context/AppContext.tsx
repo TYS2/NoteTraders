@@ -60,6 +60,7 @@ type AppContextValue = {
   signup: () => Promise<boolean>;
   login: () => Promise<boolean>;
   logout: () => void;
+  refreshCurrentUser: () => Promise<void>;
   createListing: () => Promise<boolean>;
 
   topUpBalance: (amount: number) => Promise<boolean>;
@@ -569,6 +570,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return Number.isFinite(numericId) ? numericId : null;
   }
 
+  async function refreshCurrentUser() {
+    const userId = getCurrentUserId();
+
+    if (!userId) return;
+
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to refresh account");
+      }
+
+      const freshUser = normalizeUser(data.user);
+
+      saveCurrentUser(freshUser);
+      setProfilePicture(freshUser.profilePictureUrl || null);
+    } catch (error) {
+      console.error("Failed to refresh current user:", error);
+    }
+  }
+
   function getValidTransactionAmount(amount: number) {
     const validAmount = Number(amount);
 
@@ -1034,6 +1057,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     signup,
     login,
     logout,
+    refreshCurrentUser,
     createListing,
 
     topUpBalance,

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -67,9 +68,9 @@ func Signup(c *gin.Context) {
 
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
-    c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-    return
-}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
 
 	err = client.QueryRowContext(
 		context.Background(),
@@ -170,7 +171,7 @@ func Login(c *gin.Context) {
 
 	err = utils.CheckPassword(user.Password, storedHash)
 
-	if err !=nil{
+	if err != nil {
 		log.Println("Error occurred while fetching user:", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
@@ -271,3 +272,52 @@ func getUserbyID(accountID int) (string, error) {
 	return username, nil
 }
 
+func GetUser(c *gin.Context) {
+	client := initializers.GetDB()
+
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var user models.User
+
+	err = client.QueryRowContext(
+		c.Request.Context(),
+		`SELECT
+			id,
+			username,
+			email,
+			phone_number,
+			balance,
+			COALESCE(pfp_url, '')
+		FROM users
+		WHERE id = $1`,
+		userID,
+	).Scan(
+		&user.AccountID,
+		&user.Username,
+		&user.Email,
+		&user.PhoneNumber,
+		&user.Balance,
+		&user.ProfilePictureUrl,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "Failed to retrieve user"},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
+}

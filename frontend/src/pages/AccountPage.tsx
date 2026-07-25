@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ACADEMIC_LEVEL_OPTIONS, SUBJECT_OPTIONS } from "../constants";
 import { useAppContext } from "../context/AppContext";
@@ -12,6 +12,8 @@ function AccountPage() {
   const {
     message,
     currentUser,
+    refreshCurrentUser,
+    fetchTransactionItems,
     isEditingParticulars,
     editUserForm,
     setEditUserForm,
@@ -33,6 +35,11 @@ function AccountPage() {
     itemsSold,
     itemsPurchased,
   } = useAppContext();
+
+  useEffect(() => {
+    void refreshCurrentUser();
+    void fetchTransactionItems();
+  }, []);
 
   async function handleTopUp(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

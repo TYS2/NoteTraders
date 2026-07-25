@@ -27,12 +27,13 @@ func Route(r *gin.Engine) {
 			"Content-Length",
 		},
 		AllowCredentials: true,
-		MaxAge: 12 * time.Hour,
+		MaxAge:           12 * time.Hour,
 	}))
 
 	r.POST("/signup", handlers.Signup)
 	r.PATCH("/users/:id/profile-picture", handlers.UploadProfilePicture)
 	r.POST("/login", handlers.Login)
+	r.GET("/users/:id", handlers.GetUser)
 	r.POST("/updateUser", handlers.UpdateUser)
 	r.POST("/addBalance", handlers.IncreaseUserBalance)
 	r.POST("/withdrawBalance", handlers.DecreaseUserBalance)
