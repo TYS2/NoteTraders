@@ -49,6 +49,10 @@ function NavBar() {
 
             <button onClick={() => goTo("/chats")}>Chats</button>
 
+            <button onClick={() => goTo("/favourites")}>
+              Favourites
+            </button>
+
             <button onClick={handleLogoutClick}>Log Out</button>
           </>
         ) : (

@@ -585,7 +585,8 @@ select {
 
 .home-listing-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 12px;
 }
 
@@ -1188,4 +1189,43 @@ select {
 
 .back-link:hover {
   opacity: 0.75;
+}
+
+/* Favourites page */
+.favourites-page .listing-section {
+  margin-top: 14px;
+}
+
+/* Heart button */
+.favourite-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  padding: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favourite-btn svg {
+  width: 27px;
+  height: 27px;
+  fill: transparent;
+  stroke: #111111;
+  stroke-width: 1.4;
+  transition:
+    fill 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* Saved heart */
+.favourite-btn.favourited svg {
+  fill: #dfa0a3;
+}
+
+/* Small hover effect */
+.favourite-btn:hover svg {
+  transform: scale(1.08);
 }

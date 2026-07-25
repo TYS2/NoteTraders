@@ -12,6 +12,7 @@ import SignUpPage from "./pages/SignUpPage";
 import TransactionHistoryPage from "./pages/TransactionHistoryPage";
 import ChatsPage from "./pages/ChatsPage";
 import ChatPage from "./pages/ChatPage";
+import FavouritesPage from "./pages/FavouritesPage";
 
 function App() {
   return (
@@ -33,6 +34,10 @@ function App() {
           <Route
             path="/chats/:conversationId"
             element={<ChatPage />}
+          />
+          <Route
+            path="/favourites"
+            element={<FavouritesPage />}
           />
         </Route>
 
