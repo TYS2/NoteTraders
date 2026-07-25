@@ -752,6 +752,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       setItemsPurchased((previousItems) => [
         {
+          listingID: listing.id,
           title: listing.title,
           price: listing.price,
           buyerUsername: currentUser.username,

@@ -10,6 +10,8 @@ import CreateListingPage from "./pages/CreateListingPage";
 import ListingPage from "./pages/ListingPage";
 import SignUpPage from "./pages/SignUpPage";
 import TransactionHistoryPage from "./pages/TransactionHistoryPage";
+import ChatsPage from "./pages/ChatsPage";
+import ChatPage from "./pages/ChatPage";
 
 function App() {
   return (
@@ -27,6 +29,11 @@ function App() {
           <Route path="/sell" element={<CreateListingPage />} />
           <Route path="/listings/:listingId" element={<ListingPage />} />
           <Route path="/transaction-history" element={<TransactionHistoryPage />} />
+          <Route path="/chats" element={<ChatsPage />} />
+          <Route
+            path="/chats/:conversationId"
+            element={<ChatPage />}
+          />
         </Route>
 
         <Route path="*" element={<HomePage />} />

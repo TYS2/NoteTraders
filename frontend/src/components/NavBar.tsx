@@ -47,6 +47,8 @@ function NavBar() {
 
             <button onClick={() => goTo("/sell")}>Sell Notes</button>
 
+            <button onClick={() => goTo("/chats")}>Chats</button>
+
             <button onClick={handleLogoutClick}>Log Out</button>
           </>
         ) : (

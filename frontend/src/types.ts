@@ -65,3 +65,38 @@ export type TransactionHistoryEntry = {
   amount: number;
   createdAt: string;
 };
+
+export type ChatSummary = {
+  id: number;
+  listing_id: number;
+  item_title: string;
+  other_user_id: number;
+  other_username: string;
+  last_message: string | null;
+  last_message_at: string | null;
+  unread: boolean;
+};
+
+export type ChatConversation = {
+  id: number;
+  listing_id: number;
+  item_title: string;
+  buyer_id: number;
+  seller_id: number;
+  other_user_id: number;
+  other_username: string;
+  created_at: string;
+};
+
+export type ChatMessage = {
+  id: number;
+  conversation_id: number;
+  sender_id: number;
+  message: string;
+  created_at: string;
+};
+
+export type ChatThreadResponse = {
+  conversation: ChatConversation;
+  messages: ChatMessage[];
+};

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import { createOrGetConversation } from "../api/chatAPI";
 
 function ListingPage() {
   const navigate = useNavigate();
@@ -34,6 +35,39 @@ function ListingPage() {
         </button>
       </main>
     );
+  }
+
+  async function handleChatWithSeller() {
+    const userId = Number(
+      currentUser?.accountId ?? currentUser?.id
+    );
+
+    const listingIdNumber = Number(selectedListing?.id);
+
+    if (
+      !Number.isFinite(userId) ||
+      !Number.isFinite(listingIdNumber)
+    ) {
+      setMessage(
+        "Unable to open chat because user or listing ID is missing."
+      );
+      return;
+    }
+
+    try {
+      const conversation = await createOrGetConversation(
+        userId,
+        listingIdNumber
+      );
+
+      navigate(`/chats/${conversation.id}`);
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to open chat"
+      );
+    }
   }
 
   async function handleBuy() {
@@ -94,7 +128,8 @@ function ListingPage() {
 
           <button
             className="small-green-btn"
-            onClick={() => setMessage("Chat is not implemented yet.")}
+            onClick={handleChatWithSeller}
+            disabled={currentUser?.username === selectedListing.seller}
           >
             Chat with seller
           </button>
