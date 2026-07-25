@@ -14,7 +14,7 @@ func Route(r *gin.Engine) {
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://localhost:3000",
-			"https://notetraders.yweesee.workers.dev/",
+			"https://notetraders.yweesee.workers.dev",
 		},
 		AllowMethods: []string{
 			"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS",
