@@ -147,10 +147,12 @@ func GetListings(c *gin.Context) {
 	var sellerID, levelID, subjectID int
 	var minPrice, maxPrice float64
 	var stringLevelID, stringSubjectID, stringMinPrice, stringMaxPrice string
+	var priceOrder string
 	stringLevelID = c.Query("level_id")
 	stringSubjectID = c.Query("subject_id")
 	stringMinPrice = c.Query("min_price")
 	stringMaxPrice = c.Query("max_price")
+	priceOrder = c.Query("price_order")
 	searchTerm := strings.TrimSpace(c.Query("search"))
 
 	query :=
@@ -219,6 +221,12 @@ func GetListings(c *gin.Context) {
 		query += fmt.Sprintf(" AND price <= $%d", argNum)
 		args = append(args, maxPrice)
 		argNum++
+	}
+
+	if priceOrder == "asc" {
+		query += " ORDER BY price ASC"
+	} else if priceOrder == "desc" {
+		query += " ORDER BY price DESC"
 	}
 
 	rows, err := client.QueryContext(

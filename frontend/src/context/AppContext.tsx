@@ -24,7 +24,10 @@ type AppContextValue = {
   listings: Listing[];
   filteredListings: Listing[];
   myListings: Listing[];
+  favouriteListings: Listing[];
+
   isLoadingListings: boolean;
+  isLoadingFavourites: boolean;
   hasActiveFilters: boolean;
 
   signupForm: SignupForm;
@@ -83,6 +86,12 @@ type AppContextValue = {
   fetchTransactionItems: () => Promise<void>;
   purchaseListing: (listing: Listing) => Promise<boolean>;
 
+  fetchFavourites: () => Promise<void>;
+  isFavourite: (
+    listingId: string | number | undefined
+  ) => boolean;
+  toggleFavourite: (listing: Listing) => Promise<boolean>;
+
   getListingById: (listingId: string | undefined) => Listing | null;
 };
 
@@ -130,6 +139,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [listings, setListings] = useState<Listing[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
+
+  const [favouriteListingIds, setFavouriteListingIds] = useState<Set<string>>(
+    new Set()
+  );
+
+  const [isLoadingFavourites, setIsLoadingFavourites] = useState(false);
 
   const [itemsSold, setItemsSold] = useState<TransactionItem[]>([]);
   const [itemsPurchased, setItemsPurchased] = useState<TransactionItem[]>([]);
@@ -182,6 +197,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return [];
     return listings.filter((listing) => listing.seller === currentUser.username);
   }, [listings, currentUser]);
+
+  const favouriteListings = useMemo(
+    () =>
+      listings.filter(
+        (listing) =>
+          listing.id !== undefined &&
+          favouriteListingIds.has(String(listing.id))
+      ),
+    [listings, favouriteListingIds]
+  );
 
   function clearMessage() {
     setMessage("");
@@ -322,9 +347,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (currentUser?.accountId || currentUser?.id) {
       fetchTransactionItems();
+      fetchFavourites();
     } else {
       setItemsSold([]);
       setItemsPurchased([]);
+      setFavouriteListingIds(new Set());
     }
   }, [currentUser?.accountId, currentUser?.id]);
 
@@ -454,6 +481,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function logout() {
     setCurrentUser(null);
     setProfilePicture(null);
+    setFavouriteListingIds(new Set());
     localStorage.removeItem("currentUser");
     setMessage("Logged out successfully.");
   }
@@ -687,6 +715,129 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function fetchFavourites() {
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+      setFavouriteListingIds(new Set());
+      return;
+    }
+
+    setIsLoadingFavourites(true);
+
+    try {
+      const response = await fetch(`${API_URL}/favourites/${userId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch favourites");
+      }
+
+      const ids = (data.listings || [])
+        .filter(
+          (listing: Listing) =>
+            listing.id !== undefined && listing.id !== null
+        )
+        .map((listing: Listing) => String(listing.id));
+
+      setFavouriteListingIds(new Set(ids));
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch favourites"
+      );
+    } finally {
+      setIsLoadingFavourites(false);
+    }
+  }
+
+  function isFavourite(listingId: string | number | undefined) {
+    if (listingId === undefined) {
+      return false;
+    }
+
+    return favouriteListingIds.has(String(listingId));
+  }
+
+  async function toggleFavourite(listing: Listing) {
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+      setMessage("Please sign in first.");
+      return false;
+    }
+
+    if (listing.id === undefined) {
+      setMessage("This listing is missing an ID.");
+      return false;
+    }
+
+    const listingId = Number(listing.id);
+    const listingKey = String(listing.id);
+    const wasFavourite = favouriteListingIds.has(listingKey);
+
+    // Update the heart and favourites page immediately.
+    setFavouriteListingIds((previousIds) => {
+      const nextIds = new Set(previousIds);
+
+      if (wasFavourite) {
+        nextIds.delete(listingKey);
+      } else {
+        nextIds.add(listingKey);
+      }
+
+      return nextIds;
+    });
+
+    try {
+      const response = await fetch(`${API_URL}/favourites`, {
+        method: wasFavourite ? "DELETE" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          listing_id: listingId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            (wasFavourite
+              ? "Failed to remove favourite"
+              : "Failed to add favourite")
+        );
+      }
+
+      return true;
+    } catch (error) {
+      // Revert the heart if the backend request fails.
+      setFavouriteListingIds((previousIds) => {
+        const revertedIds = new Set(previousIds);
+
+        if (wasFavourite) {
+          revertedIds.add(listingKey);
+        } else {
+          revertedIds.delete(listingKey);
+        }
+
+        return revertedIds;
+      });
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to update favourite"
+      );
+
+      return false;
+    }
+  }
+
   async function purchaseListing(listing: Listing) {
     setMessage("");
 
@@ -752,6 +903,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       setItemsPurchased((previousItems) => [
         {
+          listingID: listing.id,
           title: listing.title,
           price: listing.price,
           buyerUsername: currentUser.username,
@@ -1079,6 +1231,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     purchaseListing,
 
     getListingById,
+
+    favouriteListings,
+    isLoadingFavourites,
+    fetchFavourites,
+    isFavourite,
+    toggleFavourite,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

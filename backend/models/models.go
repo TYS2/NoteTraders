@@ -88,31 +88,59 @@ type TransactionHistoryEntry struct {
 }
 
 type IncomingMessage struct {
-	ConversationID int    `json:"conversation_id"`
-	Message        string `json:"message"`
+	Message string `json:"message"`
 }
 
 type OutgoingMessage struct {
-	ID             int       `json:"id"`
-	ConversationID int       `json:"conversation_id"`
-	SenderID       int       `json:"sender_id"`
-	Message        string    `json:"message"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID             int        `json:"id"`
+	ConversationID int        `json:"conversation_id"`
+	SenderID       int        `json:"sender_id"`
+	Message        string     `json:"message"`
+	CreatedAt      time.Time  `json:"created_at"`
+	ReadAt         *time.Time `json:"read_at,omitempty"`
 }
 
 type CreateConversationRequest struct {
-	BuyerID  int `json:"buyer_id"`
-	SellerID int `json:"seller_id"`
+	UserID    int `json:"user_id"`
+	ListingID int `json:"listing_id"`
+}
+
+type MarkConversationReadRequest struct {
+	UserID int `json:"user_id"`
 }
 
 type Conversation struct {
-	ID        int       `json:"id"`
-	BuyerID   int       `json:"buyer_id"`
-	SellerID  int       `json:"seller_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID            int       `json:"id"`
+	ListingID     int       `json:"listing_id"`
+	ItemTitle     string    `json:"item_title"`
+	BuyerID       int       `json:"buyer_id"`
+	SellerID      int       `json:"seller_id"`
+	OtherUserID   int       `json:"other_user_id"`
+	OtherUsername string    `json:"other_username"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+type ChatSummary struct {
+	ID            int        `json:"id"`
+	ListingID     int        `json:"listing_id"`
+	ItemTitle     string     `json:"item_title"`
+	OtherUserID   int        `json:"other_user_id"`
+	OtherUsername string     `json:"other_username"`
+	LastMessage   *string    `json:"last_message"`
+	LastMessageAt *time.Time `json:"last_message_at"`
+	Unread        bool       `json:"unread"`
 }
 
 type Favourite struct {
 	UserID    int `json:"user_id"`
 	ListingID int `json:"listing_id"`
+}
+
+type OTPrequest struct {
+	UserID int `json:"user_id"`
+}
+
+type VerifyOTPRequest struct {
+	Username string `json:"username"`
+	OTP    string `json:"otp"`
 }

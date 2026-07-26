@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"net/http"
 	"log"
+	"net/http"
 
 	"backend/initializers"
 	"backend/models"
@@ -12,26 +12,44 @@ import (
 )
 
 func GetFavourites(c *gin.Context) {
-	userId := c.Param("userId")
-	var listings []models.Listing
+	userID := c.Param("userId")
+	listings := make([]models.Listing, 0)
 
 	client := initializers.GetDB()
 
 	rows, err := client.QueryContext(
 		context.Background(),
-		`SELECT id, title, description, price, seller_id, level_id, subject_id, COALESCE(photo_url, '') FROM listings WHERE id IN (SELECT listing_id FROM favourites WHERE user_id = $1)`,
-		userId,
+		`SELECT
+			l.id,
+			l.title,
+			l.description,
+			l.price,
+			u.username,
+			a.level_name,
+			s.subject_name,
+			COALESCE(l.photo_url, '')
+		 FROM favourites f
+		 JOIN listings l ON l.id = f.listing_id
+		 JOIN users u ON u.id = l.seller_id
+		 JOIN academic_levels a ON a.id = l.level_id
+		 JOIN subjects s ON s.id = l.subject_id
+		 WHERE f.user_id = $1`,
+		userID,
 	)
 
 	if err != nil {
 		log.Println("Error getting favourites:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get favourites"})
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "Failed to get favourites"},
+		)
 		return
 	}
-
 	defer rows.Close()
+
 	for rows.Next() {
 		var listing models.Listing
+
 		if err := rows.Scan(
 			&listing.ListingID,
 			&listing.Title,
@@ -42,18 +60,26 @@ func GetFavourites(c *gin.Context) {
 			&listing.Subject,
 			&listing.PhotoUrl,
 		); err != nil {
-			log.Println("Error scanning listing:", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode listings"})
+			log.Println("Error scanning favourite listing:", err)
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{"error": "Failed to decode favourites"},
+			)
 			return
 		}
+
 		listings = append(listings, listing)
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Println("Row iteration error:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch listings"})
+		log.Println("Favourite row iteration error:", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "Failed to fetch favourites"},
+		)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"listings": listings})
 }
 
@@ -66,7 +92,7 @@ func AddFavourite(c *gin.Context) {
 
 	client := initializers.GetDB()
 
-	_,err := client.ExecContext(
+	_, err := client.ExecContext(
 		context.Background(),
 		`INSERT INTO favourites (user_id, listing_id) VALUES ($1, $2) ON CONFLICT (user_id, listing_id) DO NOTHING`,
 		favourite.UserID,
@@ -105,4 +131,4 @@ func RemoveFavourite(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Favourite removed successfully"})
-}	
+}

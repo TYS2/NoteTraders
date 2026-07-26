@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ACADEMIC_LEVEL_OPTIONS, SUBJECT_OPTIONS } from "../constants";
 import { useAppContext } from "../context/AppContext";
+import { createOrGetConversation } from "../api/chatAPI";
 
 function AccountPage() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ function AccountPage() {
 
   const {
     message,
+    setMessage,
     currentUser,
     refreshCurrentUser,
     fetchTransactionItems,
@@ -53,6 +55,41 @@ function AccountPage() {
 
     const success = await withdrawBalance(Number(withdrawAmount));
     if (success) setWithdrawAmount("");
+  }
+
+  async function openTransactionChat(
+    listingId?: string | number
+  ) {
+    const userId = Number(
+      currentUser?.accountId ?? currentUser?.id
+    );
+
+    const listingIdNumber = Number(listingId);
+
+    if (
+      !Number.isFinite(userId) ||
+      !Number.isFinite(listingIdNumber)
+    ) {
+      setMessage(
+        "Unable to open chat because user or listing ID is missing."
+      );
+      return;
+    }
+
+    try {
+      const conversation = await createOrGetConversation(
+        userId,
+        listingIdNumber
+      );
+
+      navigate(`/chats/${conversation.id}`);
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to open chat"
+      );
+    }
   }
 
   function formatPrice(price: number) {
@@ -245,8 +282,15 @@ function AccountPage() {
 
                     <p>Sold on: {formatTransactionDate(item.purchasedAt)}</p>
 
-                    <button className="small-green-btn">Contact Buyer</button>
-                  </div>
+                    <button
+                      className="small-green-btn"
+                      onClick={() =>
+                        openTransactionChat(item.listingID)
+                      }
+                    >
+                      Contact Buyer
+                    </button>
+                  </div>  
                 ))
               )}
             </div>
@@ -274,7 +318,14 @@ function AccountPage() {
 
                     <p>Purchased on: {formatTransactionDate(item.purchasedAt)}</p>
 
-                    <button className="small-green-btn">Contact Seller</button>
+                    <button
+                      className="small-green-btn"
+                      onClick={() =>
+                        openTransactionChat(item.listingID)
+                      }
+                    >
+                      Contact Seller
+                    </button>
                   </div>
                 ))
               )}

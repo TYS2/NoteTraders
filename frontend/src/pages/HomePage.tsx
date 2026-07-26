@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import type { Listing } from "../types";
+import ListingCard from "../components/ListingCard";
 
 function HomePage() {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ function HomePage() {
     isLoadingListings,
     filteredListings,
     hasActiveFilters,
+    isFavourite,
+    toggleFavourite,
   } = useAppContext();
 
   function handleViewListing(listing: Listing) {
@@ -27,6 +30,16 @@ function HomePage() {
     }
 
     navigate(`/listings/${listing.id}`);
+  }
+
+  function handleToggleFavourite(listing: Listing) {
+    if (!isLoggedIn) {
+      setMessage("Please sign in first.");
+      navigate("/login");
+      return;
+    }
+
+    void toggleFavourite(listing);
   }
 
   return (
@@ -55,30 +68,13 @@ function HomePage() {
         )}
 
         {filteredListings.map((listing) => (
-          <div className="listing-card" key={listing.id || listing.title}>
-            <h3>{listing.title}</h3>
-
-            <p>{listing.description}</p>
-
-            <p className="listing-meta">
-              {listing.academicLevel} • {listing.subject}
-            </p>
-
-            <p className="listing-meta">Seller: {listing.seller}</p>
-
-            <p className="price">
-              {listing.price === 0 ? "Free" : `$${listing.price.toFixed(2)}`}
-            </p>
-
-            <div className="home-listing-actions">
-              <button
-                className="small-green-btn"
-                onClick={() => handleViewListing(listing)}
-              >
-                View
-              </button>
-            </div>
-          </div>
+          <ListingCard
+            key={listing.id || listing.title}
+            listing={listing}
+            favourited={isFavourite(listing.id)}
+            onToggleFavourite={handleToggleFavourite}
+            onView={handleViewListing}
+          />
         ))}
       </section>
     </main>

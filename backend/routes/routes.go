@@ -52,9 +52,13 @@ func Route(r *gin.Engine) {
 	r.POST("/addAcademicLevel", handlers.AddLevel)
 	r.GET("/transactions/:id/history", handlers.GetTransactionHistory)
 	r.POST("/conversations", handlers.CreateConversation)
+	r.GET("/conversations", handlers.GetUserConversations)
 	r.GET("/conversations/:conversationId/messages", handlers.GetConversationMessages)
+	r.PATCH("/conversations/:conversationId/read", handlers.MarkConversationRead)
 	r.GET("/ws/chat/:conversationId", handlers.HandleChatWebSocket)
 	r.GET("/favourites/:userId", handlers.GetFavourites)
 	r.POST("/favourites", handlers.AddFavourite)
 	r.DELETE("/favourites", handlers.RemoveFavourite)
+	r.POST("/generate-otp", handlers.GetOTP)
+	r.POST("/verify-otp", handlers.VerifyOTP)
 }
