@@ -196,24 +196,27 @@ func PurchaseListing(c *gin.Context) {
 		}
 	}()
 
-	var title string
-	var price float64
-	var sellerID int
+	var (
+		title             string
+		price             float64
+		sellerID          int
+		negotiatedPrice   sql.NullFloat64
+		negotiatedBuyerID sql.NullInt64
+	)
 
 	err = tx.QueryRowContext(
 		ctx,
-		`SELECT title, price, seller_id
+		`SELECT title, price, seller_id, negotiated_price, negotiated_buyer_id
 		 FROM listings
 		 WHERE id = $1
 		 FOR UPDATE`,
 		purchase.ListingID,
-	).Scan(&title, &price, &sellerID)
+	).Scan(&title, &price, &sellerID, &negotiatedPrice, &negotiatedBuyerID)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Listing not found"})
 		return
 	}
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch listing"})
 		return
@@ -222,6 +225,15 @@ func PurchaseListing(c *gin.Context) {
 	if sellerID == purchase.BuyerID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "You cannot buy your own listing"})
 		return
+	}
+
+	if negotiatedBuyerID.Valid && int(negotiatedBuyerID.Int64) != purchase.BuyerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "This listing is reserved for another buyer"})
+		return
+	}
+
+	if negotiatedPrice.Valid {
+		price = negotiatedPrice.Float64
 	}
 
 	var buyerBalance float64
@@ -239,7 +251,6 @@ func PurchaseListing(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance"})
 		return
 	}
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deduct buyer balance"})
 		return
@@ -284,7 +295,6 @@ func PurchaseListing(c *gin.Context) {
 		`DELETE FROM listings WHERE id = $1`,
 		purchase.ListingID,
 	)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete listing"})
 		return

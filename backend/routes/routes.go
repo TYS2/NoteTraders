@@ -61,4 +61,6 @@ func Route(r *gin.Engine) {
 	r.DELETE("/favourites", handlers.RemoveFavourite)
 	r.POST("/generate-otp", handlers.GetOTP)
 	r.POST("/verify-otp", handlers.VerifyOTP)
+	r.POST("/negotiation", handlers.SetListingNegotiation)
+	r.DELETE("/negotiation/:id/undo", handlers.UndoListingNegotiation)
 }

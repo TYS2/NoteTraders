@@ -16,11 +16,6 @@ import (
 func SetListingNegotiation(c *gin.Context) {
 	client := initializers.GetDB()
 
-	listingID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid listing ID"})
-		return
-	}
 
 	var req models.NegotiationRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Price <= 0 {
@@ -28,19 +23,13 @@ func SetListingNegotiation(c *gin.Context) {
 		return
 	}
 
-	buyerID, err := getUserIDByName(req.Buyer)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid buyer"})
-		return
-	}
-
-	_, err = client.ExecContext(
+	_, err := client.ExecContext(
 		context.Background(),
 		`UPDATE listings
 		 SET negotiated_price = $1,
 		     negotiated_buyer_id = $2
 		 WHERE id = $3`,
-		req.Price, buyerID, listingID,
+		req.Price, req.Buyer, req.ListingID,
 	)
 	if err != nil {
 		log.Println("Error setting negotiation:", err)

@@ -146,7 +146,8 @@ type VerifyOTPRequest struct {
 }
 
 type NegotiationRequest struct {
-	Seller string  `json:"seller"`
-	Buyer  string  `json:"buyer"`
+	Seller int  `json:"seller_id"`
+	Buyer  int  `json:"buyer_id"`
+	ListingID int     `json:"listing_id"`
 	Price  float64 `json:"price"`
 }
