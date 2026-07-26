@@ -144,3 +144,9 @@ type VerifyOTPRequest struct {
 	Username string `json:"username"`
 	OTP    string `json:"otp"`
 }
+
+type NegotiationRequest struct {
+	Seller string  `json:"seller"`
+	Buyer  string  `json:"buyer"`
+	Price  float64 `json:"price"`
+}
