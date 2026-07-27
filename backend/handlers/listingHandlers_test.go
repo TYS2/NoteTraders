@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"bytes"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
-	"os"
 
 	"backend/initializers"
 
@@ -13,21 +15,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMain(m *testing.M) {
+	initializers.ConnectDB()
+
+	code := m.Run()
+	os.Exit(code)
+}
+
 func setupRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
 	r := gin.New()
 	r.POST("/listings", CreateListing)
 	r.GET("/listings", GetListings)
+	r.POST("/listings/:id/photo", UploadListingPicture)
+	r.GET("/search", SearchListings)
 
 	return r
 }
 
-func TestMain(m *testing.M) {
-	initializers.ConnectDB()
-	code := m.Run()
-	os.Exit(code)
-}
+// No DB needed.
 
 func TestCreateListing_InvalidJSON(t *testing.T) {
 	r := setupRouter()
@@ -42,10 +49,10 @@ func TestCreateListing_InvalidJSON(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid listing data")
 }
 
-func TestGetListings_NegativeMinPrice(t *testing.T) {
+func TestGetListings_InvalidMinPrice(t *testing.T) {
 	r := setupRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/listings?min_price=-1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/listings?min_price=abc", nil)
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -54,8 +61,30 @@ func TestGetListings_NegativeMinPrice(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid minimum price filter")
 }
 
+func TestUploadListingPicture_InvalidID(t *testing.T) {
+	r := setupRouter()
 
-func TestGetListings_NoFilters(t *testing.T) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	_ = writer.Close()
+
+	req := httptest.NewRequest(http.MethodPost, "/listings/abc/photo", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid listing ID")
+}
+
+// DB needed.
+
+func TestGetListings_NoFilters_DB(t *testing.T) {
+	if initializers.GetDB() == nil {
+		t.Skip("DATABASE_URL not set or DB not connected")
+	}
+
 	r := setupRouter()
 
 	req := httptest.NewRequest(http.MethodGet, "/listings", nil)
@@ -64,4 +93,5 @@ func TestGetListings_NoFilters(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "listings")
 }
