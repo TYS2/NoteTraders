@@ -49,6 +49,8 @@ type AppContextValue = {
   setSubjectFilter: Dispatch<SetStateAction<string>>;
   priceFilter: string;
   setPriceFilter: Dispatch<SetStateAction<string>>;
+  priceOrder: string;
+  setPriceOrder: Dispatch<SetStateAction<string>>;
 
   profilePicture: string | null;
   isEditingParticulars: boolean;
@@ -172,6 +174,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [academicLevelFilter, setAcademicLevelFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [priceFilter, setPriceFilter] = useState("");
+  const [priceOrder, setPriceOrder] = useState("");
 
   const [profilePicture, setProfilePicture] = useState<string | null>(
     storedUser?.profilePictureUrl || null
@@ -251,6 +254,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       case "Above $10":
         params.set("min_price", "10.01");
         break;
+    }
+
+    if (priceOrder) {
+      params.set("price_order", priceOrder);
     }
 
     return params;
@@ -345,6 +352,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     academicLevelFilter,
     subjectFilter,
     priceFilter,
+    priceOrder,
   ]);
 
   useEffect(() => {
@@ -1237,6 +1245,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSubjectFilter,
     priceFilter,
     setPriceFilter,
+    priceOrder,
+    setPriceOrder,
 
     profilePicture,
     isEditingParticulars,

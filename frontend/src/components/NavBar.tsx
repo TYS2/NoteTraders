@@ -21,6 +21,8 @@ function NavBar() {
     setSubjectFilter,
     priceFilter,
     setPriceFilter,
+    priceOrder,
+    setPriceOrder,
     clearMessage,
   } = useAppContext();
 
@@ -103,6 +105,15 @@ function NavBar() {
                 {priceOption}
               </option>
             ))}
+          </select>
+
+          <select
+            value={priceOrder}
+            onChange={(event) => setPriceOrder(event.target.value)}
+          >
+            <option value="">Sort by Price</option>
+            <option value="asc">Lowest to Highest</option>
+            <option value="desc">Highest to Lowest</option>
           </select>
 
           <div className="search-box">
