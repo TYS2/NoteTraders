@@ -81,6 +81,7 @@ export type ChatConversation = {
   id: number;
   listing_id: number;
   item_title: string;
+  item_price: number;
   buyer_id: number;
   seller_id: number;
   other_user_id: number;
@@ -93,6 +94,9 @@ export type ChatMessage = {
   conversation_id: number;
   sender_id: number;
   message: string;
+  message_type: "text" | "price_offer";
+  offer_price?: number | null;
+  offer_status?: "active" | "accepted" | null;
   created_at: string;
 };
 

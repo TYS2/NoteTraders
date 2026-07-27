@@ -1056,8 +1056,6 @@ select {
   font-family: Georgia, serif;
 }
 
-/* Individual chat */
-
 .chat-page {
   min-height: calc(100vh - 107px);
   padding: 14px 20px 46px;
@@ -1072,8 +1070,38 @@ select {
 }
 
 .chat-thread-header p {
-  margin-bottom: 8px;
+  margin: 0;
   font-size: 20px;
+}
+
+.chat-listing-heading {
+  min-height: 32px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.set-price-btn,
+.offer-action-btn,
+.price-modal button {
+  border: none;
+  border-radius: 18px;
+  background-color: #7fb395;
+  color: #2f4539;
+  font-family: Georgia, serif;
+  cursor: pointer;
+}
+
+.set-price-btn {
+  padding: 7px 13px;
+}
+
+.set-price-btn:hover,
+.offer-action-btn:hover,
+.price-modal button:hover {
+  opacity: 0.85;
 }
 
 .chat-window {
@@ -1127,6 +1155,37 @@ select {
   background-color: #e7c889;
 }
 
+.price-offer-bubble {
+  min-width: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.price-offer-bubble strong {
+  font-weight: normal;
+}
+
+.offer-action-btn {
+  align-self: flex-end;
+  margin-top: 2px;
+  padding: 6px 16px;
+}
+
+.offer-action-btn:disabled,
+.price-modal button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.offer-accepted-label {
+  align-self: flex-end;
+  margin-top: 3px;
+  font-size: 12px;
+  font-style: italic;
+}
+
 .chat-message-row time {
   font-size: 10px;
   white-space: nowrap;
@@ -1159,6 +1218,70 @@ select {
   padding: 0 14px;
   background-color: #7fb395;
   cursor: pointer;
+}
+
+.price-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 135px;
+  background-color: rgba(56, 47, 40, 0.35);
+}
+
+.price-modal {
+  width: min(315px, calc(100% - 32px));
+  padding: 15px 28px 10px;
+  border-radius: 24px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  background-color: #f4f0df;
+  box-shadow: 0 8px 24px rgba(56, 47, 40, 0.16);
+}
+
+.price-modal label {
+  font-size: 16px;
+}
+
+.price-input-wrapper {
+  height: 31px;
+  padding: 0 12px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+}
+
+.price-input-wrapper span {
+  margin-right: 3px;
+}
+
+.price-input-wrapper input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #8a6257;
+  font-family: Georgia, serif;
+  font-size: 16px;
+  outline: none;
+}
+
+.price-modal-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #a14f4f;
+  font-size: 13px;
+  text-align: center;
+}
+
+.price-modal button {
+  grid-column: 1 / -1;
+  justify-self: center;
+  padding: 7px 20px;
 }
 
 @media (max-width: 600px) {

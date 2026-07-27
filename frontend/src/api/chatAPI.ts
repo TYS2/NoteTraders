@@ -122,3 +122,33 @@ export function isChatMessage(value: unknown): value is ChatMessage {
     typeof message.created_at === "string"
   );
 }
+
+export async function setConversationPriceOffer(
+  conversationId: number,
+  sellerId: number,
+  price: number
+): Promise<ChatMessage> {
+  const response = await fetch(
+    `${API_URL}/conversations/${conversationId}/price-offer`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        seller_id: sellerId,
+        price,
+      }),
+    }
+  );
+
+  const data = await readJson(response);
+
+  if (!response.ok) {
+    throw new Error(
+      data.error || "Failed to set special price"
+    );
+  }
+
+  return data.message;
+}

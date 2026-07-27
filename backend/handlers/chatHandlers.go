@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"errors"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -110,14 +111,18 @@ func HandleChatWebSocket(c *gin.Context) {
 			`INSERT INTO messages (
 				conversation_id,
 				sender_id,
-				message
+				message,
+				message_type
 			)
-			VALUES ($1, $2, $3)
+			VALUES ($1, $2, $3, 'text')
 			RETURNING
 				id,
 				conversation_id,
 				sender_id,
 				message,
+				message_type,
+				offer_price,
+				offer_status,
 				created_at`,
 			conversationID,
 			senderID,
@@ -127,6 +132,9 @@ func HandleChatWebSocket(c *gin.Context) {
 			&savedMessage.ConversationID,
 			&savedMessage.SenderID,
 			&savedMessage.Message,
+			&savedMessage.MessageType,
+			&savedMessage.OfferPrice,
+			&savedMessage.OfferStatus,
 			&savedMessage.CreatedAt,
 		)
 
@@ -207,6 +215,7 @@ func GetConversationMessages(c *gin.Context) {
 			conversations.id,
 			conversations.listing_id,
 			COALESCE(conversations.item_title, ''),
+			COALESCE(listings.price, 0),
 			conversations.buyer_id,
 			conversations.seller_id,
 			CASE
@@ -217,6 +226,8 @@ func GetConversationMessages(c *gin.Context) {
 			users.username,
 			conversations.created_at
 		FROM conversations
+		LEFT JOIN listings
+			ON listings.id = conversations.listing_id
 		JOIN users
 			ON users.id = CASE
 				WHEN conversations.buyer_id = $2
@@ -234,6 +245,7 @@ func GetConversationMessages(c *gin.Context) {
 		&conversation.ID,
 		&conversation.ListingID,
 		&conversation.ItemTitle,
+		&conversation.ItemPrice,
 		&conversation.BuyerID,
 		&conversation.SellerID,
 		&conversation.OtherUserID,
@@ -262,6 +274,9 @@ func GetConversationMessages(c *gin.Context) {
 			conversation_id,
 			sender_id,
 			message,
+			message_type,
+			offer_price,
+			offer_status,
 			created_at,
 			read_at
 		FROM messages
@@ -289,6 +304,9 @@ func GetConversationMessages(c *gin.Context) {
 			&message.ConversationID,
 			&message.SenderID,
 			&message.Message,
+			&message.MessageType,
+			&message.OfferPrice,
+			&message.OfferStatus,
 			&message.CreatedAt,
 			&readAt,
 		)
@@ -664,5 +682,224 @@ func MarkConversationRead(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "chat marked as read",
+	})
+}
+
+func SetConversationPriceOffer(c *gin.Context) {
+	db := initializers.GetDB()
+	ctx := c.Request.Context()
+
+	conversationID, err := strconv.Atoi(
+		c.Param("conversationId"),
+	)
+
+	if err != nil || conversationID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid conversation id",
+		})
+		return
+	}
+
+	var request models.PriceOfferRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid price offer data",
+		})
+		return
+	}
+
+	if request.SellerID <= 0 ||
+		math.IsNaN(request.Price) ||
+		math.IsInf(request.Price, 0) ||
+		request.Price <= 0 {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "price must be more than 0",
+		})
+		return
+	}
+
+	request.Price = math.Round(request.Price*100) / 100
+
+	tx, err := db.BeginTx(ctx, nil)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to start price offer",
+		})
+		return
+	}
+
+	committed := false
+
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var listingID int
+	var sellerID int
+	var originalPrice float64
+
+	err = tx.QueryRowContext(
+		ctx,
+		`SELECT
+			conversations.listing_id,
+			conversations.seller_id,
+			listings.price
+		FROM conversations
+		JOIN listings
+			ON listings.id = conversations.listing_id
+		WHERE conversations.id = $1
+		FOR UPDATE`,
+		conversationID,
+	).Scan(
+		&listingID,
+		&sellerID,
+		&originalPrice,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "listing is no longer available",
+		})
+		return
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to load listing price",
+		})
+		return
+	}
+
+	if request.SellerID != sellerID {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "only the seller can set a special price",
+		})
+		return
+	}
+
+	if request.Price > originalPrice {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "special price cannot be higher than the listing price",
+		})
+		return
+	}
+
+	var offerMessage models.OutgoingMessage
+	var activeOfferID int
+
+	err = tx.QueryRowContext(
+		ctx,
+		`SELECT id
+		FROM messages
+		WHERE conversation_id = $1
+		  AND message_type = 'price_offer'
+		  AND offer_status = 'active'
+		ORDER BY id DESC
+		LIMIT 1
+		FOR UPDATE`,
+		conversationID,
+	).Scan(&activeOfferID)
+
+	if err == nil {
+		err = tx.QueryRowContext(
+			ctx,
+			`UPDATE messages
+			SET offer_price = $1,
+				message = 'Price Offered',
+				created_at = NOW(),
+				read_at = NULL
+			WHERE id = $2
+			RETURNING
+				id,
+				conversation_id,
+				sender_id,
+				message,
+				message_type,
+				offer_price,
+				offer_status,
+				created_at`,
+			request.Price,
+			activeOfferID,
+		).Scan(
+			&offerMessage.ID,
+			&offerMessage.ConversationID,
+			&offerMessage.SenderID,
+			&offerMessage.Message,
+			&offerMessage.MessageType,
+			&offerMessage.OfferPrice,
+			&offerMessage.OfferStatus,
+			&offerMessage.CreatedAt,
+		)
+	} else if errors.Is(err, sql.ErrNoRows) {
+		err = tx.QueryRowContext(
+			ctx,
+			`INSERT INTO messages (
+				conversation_id,
+				sender_id,
+				message,
+				message_type,
+				offer_price,
+				offer_status
+			)
+			VALUES (
+				$1,
+				$2,
+				'Price Offered',
+				'price_offer',
+				$3,
+				'active'
+			)
+			RETURNING
+				id,
+				conversation_id,
+				sender_id,
+				message,
+				message_type,
+				offer_price,
+				offer_status,
+				created_at`,
+			conversationID,
+			sellerID,
+			request.Price,
+		).Scan(
+			&offerMessage.ID,
+			&offerMessage.ConversationID,
+			&offerMessage.SenderID,
+			&offerMessage.Message,
+			&offerMessage.MessageType,
+			&offerMessage.OfferPrice,
+			&offerMessage.OfferStatus,
+			&offerMessage.CreatedAt,
+		)
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to save price offer",
+		})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to complete price offer",
+		})
+		return
+	}
+
+	committed = true
+
+	broadcastToRoom(
+		conversationID,
+		offerMessage,
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": offerMessage,
 	})
 }

@@ -65,8 +65,9 @@ type Level struct {
 }
 
 type Purchase struct {
-	BuyerID   int `json:"buyerID" binding:"required"`
-	ListingID int `json:"listingID" binding:"required"`
+	BuyerID        int  `json:"buyerID" binding:"required"`
+	ListingID      int  `json:"listingID" binding:"required"`
+	OfferMessageID *int `json:"offerMessageID,omitempty"`
 }
 
 type TransactionHistoryItem struct {
@@ -96,6 +97,9 @@ type OutgoingMessage struct {
 	ConversationID int        `json:"conversation_id"`
 	SenderID       int        `json:"sender_id"`
 	Message        string     `json:"message"`
+	MessageType    string     `json:"message_type"`
+	OfferPrice     *float64   `json:"offer_price,omitempty"`
+	OfferStatus    *string    `json:"offer_status,omitempty"`
 	CreatedAt      time.Time  `json:"created_at"`
 	ReadAt         *time.Time `json:"read_at,omitempty"`
 }
@@ -113,6 +117,7 @@ type Conversation struct {
 	ID            int       `json:"id"`
 	ListingID     int       `json:"listing_id"`
 	ItemTitle     string    `json:"item_title"`
+	ItemPrice     float64   `json:"item_price"`
 	BuyerID       int       `json:"buyer_id"`
 	SellerID      int       `json:"seller_id"`
 	OtherUserID   int       `json:"other_user_id"`
@@ -136,11 +141,7 @@ type Favourite struct {
 	ListingID int `json:"listing_id"`
 }
 
-type OTPrequest struct {
-	UserID int `json:"user_id"`
-}
-
-type VerifyOTPRequest struct {
-	Username string `json:"username"`
-	OTP    string `json:"otp"`
+type PriceOfferRequest struct {
+	SellerID int     `json:"seller_id" binding:"required"`
+	Price    float64 `json:"price" binding:"required"`
 }

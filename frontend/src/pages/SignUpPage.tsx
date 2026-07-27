@@ -7,7 +7,9 @@ function SignUpPage() {
 
   const { message, signupForm, setSignupForm, signup } = useAppContext();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     const success = await signup();

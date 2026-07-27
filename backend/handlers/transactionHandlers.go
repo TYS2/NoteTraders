@@ -183,6 +183,11 @@ func PurchaseListing(c *gin.Context) {
 		return
 	}
 
+	if purchase.OfferMessageID != nil && *purchase.OfferMessageID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid price offer"})
+		return
+	}
+
 	tx, err := client.BeginTx(ctx, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start purchase"})
@@ -190,6 +195,7 @@ func PurchaseListing(c *gin.Context) {
 	}
 
 	committed := false
+
 	defer func() {
 		if !committed {
 			_ = tx.Rollback()
@@ -207,45 +213,137 @@ func PurchaseListing(c *gin.Context) {
 		 WHERE id = $1
 		 FOR UPDATE`,
 		purchase.ListingID,
-	).Scan(&title, &price, &sellerID)
+	).Scan(
+		&title,
+		&price,
+		&sellerID,
+	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Listing not found"})
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Listing not found",
+		})
 		return
 	}
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch listing"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch listing",
+		})
 		return
 	}
 
 	if sellerID == purchase.BuyerID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You cannot buy your own listing"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "You cannot buy your own listing",
+		})
 		return
 	}
 
+	if purchase.OfferMessageID != nil {
+		var offerPrice float64
+		var offerStatus string
+		var offerSenderID int
+		var conversationListingID int
+		var conversationBuyerID int
+		var conversationSellerID int
+
+		err = tx.QueryRowContext(
+			ctx,
+			`SELECT
+				messages.offer_price,
+				messages.offer_status,
+				messages.sender_id,
+				conversations.listing_id,
+				conversations.buyer_id,
+				conversations.seller_id
+			 FROM messages
+			 JOIN conversations
+				ON conversations.id = messages.conversation_id
+			 WHERE messages.id = $1
+			   AND messages.message_type = 'price_offer'
+			 FOR UPDATE OF messages`,
+			*purchase.OfferMessageID,
+		).Scan(
+			&offerPrice,
+			&offerStatus,
+			&offerSenderID,
+			&conversationListingID,
+			&conversationBuyerID,
+			&conversationSellerID,
+		)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Price offer not found",
+			})
+			return
+		}
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to verify price offer",
+			})
+			return
+		}
+
+		if offerStatus != "active" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "This price offer is no longer active",
+			})
+			return
+		}
+
+		if conversationListingID != purchase.ListingID ||
+			conversationBuyerID != purchase.BuyerID ||
+			conversationSellerID != sellerID ||
+			offerSenderID != sellerID {
+
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "This price offer does not belong to you",
+			})
+			return
+		}
+
+		if offerPrice <= 0 || offerPrice > price {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid price offer",
+			})
+			return
+		}
+
+		price = offerPrice
+	}
+
 	var buyerBalance float64
+
 	err = tx.QueryRowContext(
 		ctx,
 		`UPDATE users
 		 SET balance = balance - $1
-		 WHERE id = $2 AND balance >= $1
+		 WHERE id = $2
+		   AND balance >= $1
 		 RETURNING balance`,
 		price,
 		purchase.BuyerID,
 	).Scan(&buyerBalance)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Insufficient balance",
+		})
 		return
 	}
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deduct buyer balance"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to deduct buyer balance",
+		})
 		return
 	}
 
 	var sellerBalance float64
+
 	err = tx.QueryRowContext(
 		ctx,
 		`UPDATE users
@@ -257,16 +355,25 @@ func PurchaseListing(c *gin.Context) {
 	).Scan(&sellerBalance)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add seller balance"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to add seller balance",
+		})
 		return
 	}
 
 	var transactionID int
+
 	err = tx.QueryRowContext(
 		ctx,
-		`INSERT INTO purchases (listing_id, title, price, buyer_id, seller_id)
-		 VALUES ($1, $2, $3, $4, $5)
-		 RETURNING id`,
+		`INSERT INTO purchases (
+			listing_id,
+			title,
+			price,
+			buyer_id,
+			seller_id
+		)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id`,
 		purchase.ListingID,
 		title,
 		price,
@@ -275,31 +382,87 @@ func PurchaseListing(c *gin.Context) {
 	).Scan(&transactionID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save purchase history"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to save purchase history",
+		})
 		return
+	}
+
+	var acceptedOffer *models.OutgoingMessage
+
+	if purchase.OfferMessageID != nil {
+		var message models.OutgoingMessage
+
+		err = tx.QueryRowContext(
+			ctx,
+			`UPDATE messages
+			 SET offer_status = 'accepted'
+			 WHERE id = $1
+			 RETURNING
+				id,
+				conversation_id,
+				sender_id,
+				message,
+				message_type,
+				offer_price,
+				offer_status,
+				created_at`,
+			*purchase.OfferMessageID,
+		).Scan(
+			&message.ID,
+			&message.ConversationID,
+			&message.SenderID,
+			&message.Message,
+			&message.MessageType,
+			&message.OfferPrice,
+			&message.OfferStatus,
+			&message.CreatedAt,
+		)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to accept price offer",
+			})
+			return
+		}
+
+		acceptedOffer = &message
 	}
 
 	_, err = tx.ExecContext(
 		ctx,
-		`DELETE FROM listings WHERE id = $1`,
+		`DELETE FROM listings
+		 WHERE id = $1`,
 		purchase.ListingID,
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete listing"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete listing",
+		})
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to complete purchase"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to complete purchase",
+		})
 		return
 	}
 
 	committed = true
 
+	if acceptedOffer != nil {
+		broadcastToRoom(
+			acceptedOffer.ConversationID,
+			*acceptedOffer,
+		)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "Purchase successful",
 		"transactionID": transactionID,
+		"price":         price,
 		"buyerBalance":  buyerBalance,
 		"sellerBalance": sellerBalance,
 	})

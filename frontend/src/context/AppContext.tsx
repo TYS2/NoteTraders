@@ -84,7 +84,10 @@ type AppContextValue = {
   itemsSold: TransactionItem[];
   itemsPurchased: TransactionItem[];
   fetchTransactionItems: () => Promise<void>;
-  purchaseListing: (listing: Listing) => Promise<boolean>;
+  purchaseListing: (
+    listing: Listing,
+    offerMessageId?: number
+  ) => Promise<boolean>;
 
   fetchFavourites: () => Promise<void>;
   isFavourite: (
@@ -406,22 +409,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error || "Signup failed");
       }
 
-      const backendUser = typeof data.user === "object" ? data.user : null;
+      const backendUser =
+        typeof data.user === "object" ? data.user : null;
 
       const newUser: User = {
-        username: backendUser?.username ?? signupForm.username,
-        email: backendUser?.email ?? signupForm.email,
-        phoneNumber: backendUser?.phoneNumber ?? signupForm.phoneNumber,
-        accountId: backendUser?.accountId ?? backendUser?.id ?? data.user,
+        username:
+          backendUser?.username ?? signupForm.username,
+        email:
+          backendUser?.email ?? signupForm.email,
+        phoneNumber:
+          backendUser?.phoneNumber ?? signupForm.phoneNumber,
+        accountId:
+          backendUser?.accountId ??
+          backendUser?.id ??
+          data.user,
         balance: backendUser?.balance ?? 0,
-        profilePictureUrl: backendUser?.profilePictureUrl,
+        profilePictureUrl:
+          backendUser?.profilePictureUrl,
       };
 
       setCurrentUser(newUser);
-      setProfilePicture(newUser.profilePictureUrl || null);
-      localStorage.setItem("currentUser", JSON.stringify(newUser));
+      setProfilePicture(
+        newUser.profilePictureUrl || null
+      );
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify(newUser)
+      );
 
-      setMessage(`Welcome to NoteTrade, ${newUser.username}!`);
+      setMessage(
+        `Welcome to NoteTrade, ${newUser.username}!`
+      );
 
       setSignupForm({
         username: "",
@@ -438,7 +456,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       return true;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Signup failed");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Signup failed"
+      );
       return false;
     }
   }
@@ -467,13 +489,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const loggedInUser = normalizeUser(data.user);
 
       setCurrentUser(loggedInUser);
-      setProfilePicture(loggedInUser.profilePictureUrl || null);
-      localStorage.setItem("currentUser", JSON.stringify(loggedInUser));
+      setProfilePicture(
+        loggedInUser.profilePictureUrl || null
+      );
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify(loggedInUser)
+      );
 
-      setMessage(`Welcome back, ${loggedInUser.username}!`);
+      setMessage(
+        `Welcome back, ${loggedInUser.username}!`
+      );
+
       return true;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Login failed");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Login failed"
+      );
+
       return false;
     }
   }
@@ -838,7 +873,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function purchaseListing(listing: Listing) {
+  async function purchaseListing(listing: Listing, offerMessageId?: number) {
     setMessage("");
 
     if (!currentUser) {
@@ -872,6 +907,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           buyerID,
           listingID: Number(listing.id),
+          ...(offerMessageId !== undefined
+            ? { offerMessageID: offerMessageId }
+            : {}),
         }),
       });
 
@@ -881,10 +919,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error || "Purchase failed");
       }
 
+      const purchasedPrice = Number(
+        data.price ?? listing.price
+      );
+
       const updatedBalance =
         data.buyerBalance !== undefined
           ? Number(data.buyerBalance)
-          : Number(currentUser.balance ?? 0) - Number(listing.price);
+          : Number(currentUser.balance ?? 0) - purchasedPrice;
 
       saveCurrentUser({
         ...currentUser,
@@ -905,7 +947,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         {
           listingID: listing.id,
           title: listing.title,
-          price: listing.price,
+          price: purchasedPrice,
           buyerUsername: currentUser.username,
           sellerUsername: listing.seller,
           purchasedAt: new Date().toISOString(),
